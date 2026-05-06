@@ -7,7 +7,6 @@ import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
 
 @RestController
@@ -19,13 +18,11 @@ public class TutorController {
 
     @PostMapping
     public ResponseEntity<TutorResponseDTO> cadastrar(@RequestBody @Valid TutorRequestDTO dto) {
-        TutorResponseDTO response = tutorService.salvar(dto);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(tutorService.salvar(dto));
     }
 
     @GetMapping
     public ResponseEntity<List<TutorResponseDTO>> listar() {
-        List<TutorResponseDTO> lista = tutorService.listarTodos();
-        return ResponseEntity.ok(lista);
+        return ResponseEntity.ok(tutorService.listarTodos());
     }
 }
