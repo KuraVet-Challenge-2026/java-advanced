@@ -1,5 +1,6 @@
 package br.com.fiap.kuravet.controller;
 
+import io.swagger.v3.oas.annotations.Hidden;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -9,6 +10,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import java.util.HashMap;
 import java.util.Map;
 
+@Hidden // <--- ESSA É A MÁGICA QUE RESOLVE O ERRO E ESCONDE DO SWAGGER
 @ControllerAdvice
 public class GlobalExceptionHandler {
 

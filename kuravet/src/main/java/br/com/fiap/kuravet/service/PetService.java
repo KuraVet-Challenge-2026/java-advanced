@@ -7,8 +7,10 @@ import br.com.fiap.kuravet.domain.repository.TutorRepository;
 import br.com.fiap.kuravet.dto.PetRequestDTO;
 import br.com.fiap.kuravet.dto.PetResponseDTO;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import java.util.List;
 
 @Service
 public class PetService {
@@ -34,10 +36,18 @@ public class PetService {
         return converterParaDTO(petSalvo);
     }
 
-    public List<PetResponseDTO> listarTodos() {
-        return petRepository.findAll().stream()
-                .map(this::converterParaDTO)
-                .toList();
+    // Traz todos os pets paginados e guarda em cache
+    @Cacheable("todosPets")
+    public Page<PetResponseDTO> listarTodos(Pageable pageable) {
+        return petRepository.findAll(pageable)
+                .map(this::converterParaDTO);
+    }
+
+    // Busca por espécie com paginação e guarda em cache
+    @Cacheable("petsPorEspecie")
+    public Page<PetResponseDTO> buscarPorEspecie(String especie, Pageable pageable) {
+        return petRepository.findByEspecieIgnoreCase(especie, pageable)
+                .map(this::converterParaDTO);
     }
 
     private PetResponseDTO converterParaDTO(Pet pet) {
