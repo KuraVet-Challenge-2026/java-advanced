@@ -9,6 +9,5 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface PetRepository extends JpaRepository<Pet, Long> {
 
-    // Método para busca por parâmetro com paginação
     Page<Pet> findByEspecieIgnoreCase(String especie, Pageable pageable);
 }

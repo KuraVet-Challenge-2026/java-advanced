@@ -11,6 +11,7 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.cache.annotation.CacheEvict;
 
 @Service
 public class PetService {
@@ -61,4 +62,33 @@ public class PetService {
                 pet.getScoreVitalidade()
         );
     }
+
+    // Atualiza um Pet existente e limpa os caches antigos
+    @CacheEvict(value = {"todosPets", "petsPorEspecie"}, allEntries = true)
+    public PetResponseDTO atualizar(Long id, PetRequestDTO dto) {
+        Pet pet = petRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Pet não encontrado para atualização"));
+
+        Tutor tutor = tutorRepository.findById(dto.idTutor())
+                .orElseThrow(() -> new RuntimeException("Tutor não encontrado"));
+
+        pet.setTutor(tutor);
+        pet.setNome(dto.nome());
+        pet.setEspecie(dto.especie());
+        pet.setRaca(dto.raca());
+        pet.setDataNascimento(dto.dataNascimento());
+
+        Pet petAtualizado = petRepository.save(pet);
+        return converterParaDTO(petAtualizado);
+    }
+
+    // Exclui um Pet e limpa os caches
+    @CacheEvict(value = {"todosPets", "petsPorEspecie"}, allEntries = true)
+    public void excluir(Long id) {
+        Pet pet = petRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Pet não encontrado para exclusão"));
+
+        petRepository.delete(pet);
+    }
+
 }

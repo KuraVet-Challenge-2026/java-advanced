@@ -24,10 +24,6 @@ public class EventoConsulta {
     @Column(name = "data_evento")
     private LocalDateTime dataEvento = LocalDateTime.now();
 
-    // ==========================================
-    // GETTERS E SETTERS MANUAIS (Obrigatório)
-    // ==========================================
-
     public Long getId() {
         return id;
     }

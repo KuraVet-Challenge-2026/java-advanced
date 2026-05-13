@@ -44,4 +44,24 @@ public class TutorService {
                 ))
                 .toList();
     }
+
+    public TutorResponseDTO atualizar(Long id, TutorRequestDTO dto) {
+        Tutor tutor = tutorRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Tutor não encontrado para atualização"));
+
+        tutor.setNome(dto.nome());
+        tutor.setCpf(dto.cpf());
+        tutor.setEmail(dto.email());
+        tutor.setTelefone(dto.telefone());
+
+        Tutor atualizado = tutorRepository.save(tutor);
+        return new TutorResponseDTO(atualizado.getId(), atualizado.getNome(), atualizado.getEmail(), atualizado.getTelefone(), atualizado.getDataCadastro());
+    }
+
+    public void excluir(Long id) {
+        Tutor tutor = tutorRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Tutor não encontrado para exclusão"));
+        tutorRepository.delete(tutor);
+    }
+
 }

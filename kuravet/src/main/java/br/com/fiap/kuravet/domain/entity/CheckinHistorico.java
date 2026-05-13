@@ -21,7 +21,7 @@ public class CheckinHistorico {
     @Column(length = 500)
     private String observacoes;
 
-    // Getters e Setters Manuais (Obrigatório conforme sua correção anterior)
+    // Getters e Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public Pet getPet() { return pet; }

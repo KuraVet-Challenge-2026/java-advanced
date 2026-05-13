@@ -9,6 +9,8 @@ import br.com.fiap.kuravet.dto.EventoConsultaResponseDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 public class EventoConsultaService {
 
@@ -37,4 +39,37 @@ public class EventoConsultaService {
                 salvo.getTratamento()
         );
     }
+
+    public EventoConsultaResponseDTO atualizar(Long id, EventoConsultaRequestDTO dto) {
+        EventoConsulta evento = eventoRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Evento de consulta não encontrado"));
+
+        Pet pet = petRepository.findById(dto.idPet())
+                .orElseThrow(() -> new RuntimeException("Pet não encontrado"));
+
+        evento.setPet(pet);
+        evento.setDiagnostico(dto.diagnostico());
+        evento.setTratamento(dto.tratamento());
+
+        EventoConsulta atualizado = eventoRepository.save(evento);
+        return new EventoConsultaResponseDTO(atualizado.getId(), pet.getId(), atualizado.getDiagnostico(), atualizado.getTratamento());
+    }
+
+    public void excluir(Long id) {
+        EventoConsulta evento = eventoRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Evento de consulta não encontrado"));
+        eventoRepository.delete(evento);
+    }
+
+    public List<EventoConsultaResponseDTO> listarTodos() {
+        return eventoRepository.findAll().stream()
+                .map(e -> new EventoConsultaResponseDTO(
+                        e.getId(),
+                        e.getPet().getId(),
+                        e.getDiagnostico(),
+                        e.getTratamento()
+                ))
+                .toList();
+    }
+
 }

@@ -32,10 +32,6 @@ public class Tutor {
         this.dataCadastro = LocalDate.now();
     }
 
-    // ==========================================
-    // GETTERS E SETTERS MANUAIS
-    // ==========================================
-
     public Long getId() {
         return id;
     }

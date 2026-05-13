@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import java.util.HashMap;
 import java.util.Map;
 
-@Hidden // <--- ESSA É A MÁGICA QUE RESOLVE O ERRO E ESCONDE DO SWAGGER
+@Hidden
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -22,7 +22,7 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(erro);
     }
 
-    // Trata erros de validação (ex: CPF inválido, campo em branco)
+    // Trata erros de validação
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, String>> handleValidationExceptions(MethodArgumentNotValidException ex) {
         Map<String, String> erros = new HashMap<>();
