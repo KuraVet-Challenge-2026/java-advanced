@@ -1,7 +1,10 @@
-# KuraVet - Ecossistema de Saúde Animal Contínua
+# 🐾 KuraVet - Ecossistema de Saúde Animal Contínua
 
 ## 📋 Sobre o Projeto
-O **KuraVet** é uma solução tecnológica desenvolvida para o **Challenge 2026** da FIAP, em parceria com a **Clyvo Vet**. O objetivo do projeto é transformar a jornada de saúde animal, migrando de um modelo reativo e episódico para um ecossistema de cuidado contínuo, preventivo e inteligente.
+
+O **KuraVet** é uma solução tecnológica desenvolvida para o **Challenge 2026 da FIAP**, em parceria com a **Clyvo Vet**.
+
+O objetivo do projeto é transformar a jornada de saúde animal, migrando de um modelo reativo e episódico para um ecossistema de cuidado contínuo, preventivo e inteligente.
 
 A plataforma permite que tutores e clínicas veterinárias acompanhem o histórico clínico longitudinal do pet, gerenciem check-ins e monitorem indicadores de vitalidade, garantindo maior fidelização para as clínicas e melhor qualidade de vida para os animais.
 
@@ -9,13 +12,9 @@ A plataforma permite que tutores e clínicas veterinárias acompanhem o históri
 
 # 📊 Diagrama de Classe UML
 
-<p align="center">
-  <img src="https://i.ibb.co/wZDTMbKg/mermaid-diagram-1.png" alt="Diagrama de Classe UML KuraVet" width="900">
-</p>
-
 ---
 
-## 👥 Equipe (Squad)
+# 👥 Equipe (Squad)
 
 - **Pedro Henrique Luiz Alves Duarte**
 - **Guilherme Macedo Martins**
@@ -25,103 +24,119 @@ A plataforma permite que tutores e clínicas veterinárias acompanhem o históri
 
 ---
 
-## 🚀 Tecnologias Utilizadas
+# 🚀 Tecnologias Utilizadas
 
-- **Java 17**
-- **Spring Boot 4.0.6**
-- **Spring Data JPA** (Persistência de Dados)
-- **Oracle SQL / H2 Database** (Banco de Dados Relacional)
-- **Bean Validation** (Validação de Dados)
-- **Spring Cache** (Otimização de Performance)
-- **Springdoc OpenAPI (Swagger)** (Documentação da API)
-- **Maven** (Gerenciador de Dependências)
-
----
-
-## ⚙️ Funcionalidades e Requisitos Implementados
-
-A API foi desenvolvida seguindo os padrões **RESTful** e cumpre todos os requisitos técnicos da disciplina de **Java Advanced**:
-
-1. **CRUD Completo**
-   - Gerenciamento de Tutores
-   - Gerenciamento de Pets
-   - Gerenciamento de Check-ins
-   - Gerenciamento de Eventos de Consulta
-
-2. **Validação de Dados**
-   - Uso de `@Valid`
-   - Bean Validation:
-     - `@NotBlank`
-     - `@CPF`
-     - `@Email`
-
-3. **Paginação e Ordenação**
-   - Implementada na listagem de Pets para garantir escalabilidade.
-
-4. **Busca com Parâmetros**
-   - Filtro de busca de Pets por espécie.
-
-5. **Cache**
-   - Utilização de:
-     - `@Cacheable`
-     - `@CacheEvict`
-
-6. **Tratamento Global de Erros**
-   - `GlobalExceptionHandler`
-   - Retornos HTTP padronizados:
-     - 400
-     - 404
-     - 500
-
-7. **Documentação Interativa**
-   - Swagger UI configurado para testes rápidos.
+- Java 17
+- Spring Boot 4.0.6
+- Spring Data JPA (Persistência de Dados)
+- Oracle SQL / H2 Database (Banco de Dados Relacional)
+- Bean Validation (Validação de Dados)
+- Spring Cache (Otimização de Performance)
+- Springdoc OpenAPI (Swagger) (Documentação da API)
+- Maven (Gerenciador de Dependências)
 
 ---
 
-## 🛠️ Como Executar o Projeto
+# ⚙️ Funcionalidades e Requisitos Implementados
 
-### 📌 Pré-requisitos
+A API foi desenvolvida seguindo os padrões RESTful e cumpre todos os requisitos técnicos da disciplina de Java Advanced:
+
+## ✅ CRUD Completo
+
+- Gerenciamento de Tutores
+- Gerenciamento de Pets
+- Gerenciamento de Check-ins
+- Gerenciamento de Eventos de Consulta
+
+---
+
+## ✅ Validação de Dados
+
+Uso de `@Valid`
+
+### Bean Validation
+
+- `@NotBlank`
+- `@CPF`
+- `@Email`
+
+---
+
+## ✅ Paginação e Ordenação
+
+Implementada na listagem de Pets para garantir escalabilidade.
+
+---
+
+## ✅ Busca com Parâmetros
+
+Filtro de busca de Pets por espécie.
+
+---
+
+## ✅ Cache
+
+Utilização de:
+
+- `@Cacheable`
+- `@CacheEvict`
+
+---
+
+## ✅ Tratamento Global de Erros
+
+`GlobalExceptionHandler`
+
+### Retornos HTTP padronizados
+
+- `400`
+- `404`
+- `500`
+
+---
+
+## ✅ Documentação Interativa
+
+Swagger UI configurado para testes rápidos.
+
+---
+
+# 🛠️ Como Executar o Projeto
+
+## 📌 Pré-requisitos
 
 - Java 17 ou superior
 - Maven instalado
 
 ---
 
-### ▶️ Passo a Passo
+## ▶️ Passo a Passo
 
-#### 1. Clone o repositório
+### 1. Clone o repositório
 
 ```bash
 git clone https://github.com/KuraVet-Challenge-2026/java-advanced.git
 ```
 
----
-
-#### 2. Navegue até a pasta do projeto
+### 2. Navegue até a pasta do projeto
 
 ```bash
 cd java-advanced
 ```
 
----
-
-#### 3. Instale as dependências
+### 3. Instale as dependências
 
 ```bash
 mvn clean install
 ```
 
----
-
-#### 4. Execute a aplicação
+### 4. Execute a aplicação
 
 ```bash
 mvn spring-boot:run
 ```
 
----
-
-#### 5. Acesse a documentação Swagger
+### 5. Acesse a documentação Swagger
 
 ```bash
 http://localhost:8080/swagger-ui/index.html
@@ -129,7 +144,7 @@ http://localhost:8080/swagger-ui/index.html
 
 ---
 
-## 🔍 Documentação da API (Principais Endpoints)
+# 🔍 Documentação da API (Principais Endpoints)
 
 # 👤 Tutores
 
@@ -137,8 +152,8 @@ http://localhost:8080/swagger-ui/index.html
 |---|---|---|
 | POST | `/tutores` | Cadastra um novo tutor |
 | GET | `/tutores` | Lista todos os tutores |
-| PUT | `/tutores/{id}` | Atualiza dados do tutor |
-| DELETE | `/tutores/{id}` | Remove um tutor |
+| PUT | `/tutores/{id}` | Atualiza dados de um tutor existente |
+| DELETE | `/tutores/{id}` | Remove um tutor do sistema |
 
 ---
 
@@ -147,12 +162,14 @@ http://localhost:8080/swagger-ui/index.html
 | Método | Endpoint | Descrição |
 |---|---|---|
 | POST | `/pets` | Cadastra um pet vinculado a um tutor |
-| GET | `/pets` | Lista pets |
+| GET | `/pets` | Lista pets cadastrados (suporta paginação) |
 | GET | `/pets/busca?especie=Gato` | Filtra pets por espécie |
-| PUT | `/pets/{id}` | Atualiza dados do pet |
-| DELETE | `/pets/{id}` | Remove um pet |
+| PUT | `/pets/{id}` | Atualiza dados de um pet existente |
+| DELETE | `/pets/{id}` | Remove um pet do sistema |
 
-### 📄 Exemplo de Paginação
+---
+
+# 📄 Exemplo de Paginação
 
 ```http
 GET /pets?page=0&size=5&sort=nome,asc
@@ -164,71 +181,85 @@ GET /pets?page=0&size=5&sort=nome,asc
 
 | Método | Endpoint | Descrição |
 |---|---|---|
-| POST | `/checkins` | Registra um novo check-in |
+| POST | `/checkins` | Registra um novo check-in de um pet |
 | GET | `/checkins` | Lista histórico de check-ins |
+| PUT | `/checkins/{id}` | Atualiza observações de um check-in |
+| DELETE | `/checkins/{id}` | Remove um check-in do sistema |
 | POST | `/eventos` | Registra uma nova consulta clínica |
 | GET | `/eventos` | Lista histórico de consultas |
+| PUT | `/eventos/{id}` | Atualiza diagnóstico/tratamento de uma consulta |
+| DELETE | `/eventos/{id}` | Remove o registro de uma consulta |
 
 ---
 
-## 📂 Estrutura de Documentos para Avaliação
+# 📂 Estrutura de Documentos para Avaliação
 
 Os arquivos abaixo encontram-se na pasta `/documentos` ou `/docs` na raiz do repositório.
 
-### 📁 Arquivos Entregáveis
+## 📁 Arquivos Entregáveis
 
-1. **Postman Collection**
-   - `KuraVet-API.postman_collection.json`
+### 📌 Postman Collection
 
-2. **Diagramas**
-   - Diagrama de Classes
-   - DER (Modelo Entidade Relacionamento)
+- `KuraVet-API.postman_collection.json`
 
-3. **Cronograma**
-   - Documento detalhando divisão de tarefas e prazos.
+### 📌 Diagramas
 
-4. **Vídeo Pitch / Demonstração**
-   - Link do YouTube do projeto.
+- Diagrama de Classes
+- DER (Modelo Entidade Relacionamento)
+
+### 📌 Cronograma
+
+Documento detalhando divisão de tarefas e prazos.
+
+### 📌 Vídeo Pitch / Demonstração
+
+Link do YouTube do projeto.
 
 ---
 
-## 🧪 Instruções para Testes (Postman)
+# 🧪 Instruções para Testes (Postman)
 
 Para validar corretamente o funcionamento da API, siga esta ordem lógica:
 
-### 1️⃣ Cadastre um Tutor
+## 1️⃣ Cadastre um Tutor
 
 ```http
 POST /tutores
 ```
 
----
-
-### 2️⃣ Cadastre um Pet vinculado ao Tutor
+## 2️⃣ Cadastre um Pet vinculado ao Tutor
 
 ```http
 POST /pets
 ```
 
----
-
-### 3️⃣ Registre um Check-in ou Consulta
+## 3️⃣ Registre um Check-in ou Consulta
 
 ```http
 POST /checkins
 POST /eventos
 ```
 
----
-
-### 4️⃣ Teste listagens e filtros
+## 4️⃣ Teste as atualizações, listagens e filtros
 
 ```http
+PUT /tutores/{id}
 GET /pets
 GET /pets/busca
 GET /checkins
 GET /eventos
+DELETE /pets/{id}
 ```
+
+---
+
+# 🖼️ Preview da Aplicação
+
+<p align="center">
+  <a href="https://ibb.co/B2q6ttvw">
+    <img src="https://i.ibb.co/qYkgddhx/imagem.png" alt="Preview da aplicação KuraVet" border="0" width="100%">
+  </a>
+</p>
 
 ---
 
@@ -250,4 +281,4 @@ Este projeto foi desenvolvido para aplicar conceitos avançados de:
 
 # 🐾 KuraVet
 
-## Transformando o cuidado veterinário em uma jornada contínua e inteligente.
+### Transformando o cuidado veterinário em uma jornada contínua e inteligente.
