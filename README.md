@@ -11,14 +11,18 @@ A plataforma permite que tutores e clínicas veterinárias acompanhem o históri
 ---
 
 # 📊 Diagrama de Classe UML
-<a href="https://ibb.co/JF7zGjMN"><img src="https://i.ibb.co/6JP4T0f2/imagem-2.png" alt="imagem (2)" border="0"></a>
+
+<a href="https://ibb.co/JF7zGjMN">
+  <img src="https://i.ibb.co/6JP4T0f2/imagem-2.png" alt="imagem (2)" border="0">
+</a>
+
 ---
 
 # 👥 Equipe (Squad)
 
-- **Pedro Henrique Luiz Alves Duarte**
-- **Guilherme Macedo Martins**
-- **Henrique Martins**
+- Pedro Henrique Luiz Alves Duarte
+- Guilherme Macedo Martins
+- Henrique Martins
 
 **Turma:** 2TDSPO
 
@@ -30,6 +34,7 @@ A plataforma permite que tutores e clínicas veterinárias acompanhem o históri
 - Spring Boot 4.0.6
 - Spring Data JPA (Persistência de Dados)
 - Oracle SQL / H2 Database (Banco de Dados Relacional)
+- Docker & Docker Compose (Containerização da Infraestrutura)
 - Bean Validation (Validação de Dados)
 - Spring Cache (Otimização de Performance)
 - Springdoc OpenAPI (Swagger) (Documentação da API)
@@ -37,67 +42,105 @@ A plataforma permite que tutores e clínicas veterinárias acompanhem o históri
 
 ---
 
-# ⚙️ Funcionalidades e Requisitos Implementados
+# 🏛️ Arquitetura, Desacoplamento e Padrões de Projeto
 
-A API foi desenvolvida seguindo os padrões RESTful e cumpre todos os requisitos técnicos da disciplina de Java Advanced:
+Visando atender aos critérios de coesão, desacoplamento e padrões de projeto estabelecidos na rubrica, a API foi estruturada seguindo rigorosamente a arquitetura em camadas independentes:
 
-## ✅ CRUD Completo
+## Camada de Apresentação (Controllers)
 
-- Gerenciamento de Tutores
-- Gerenciamento de Pets
-- Gerenciamento de Check-ins
-- Gerenciamento de Eventos de Consulta
+Responsável estritamente pela exposição dos endpoints RESTful, manipulação dos códigos de status HTTP e integração com a documentação do Swagger.
 
----
+## Camada de Negócio (Services)
 
-## ✅ Validação de Dados
+Concentra as regras de negócio operacionais, isolando as decisões lógicas das camadas externas.
 
-Uso de `@Valid`
+## Camada de Acesso a Dados (Repositories)
 
-### Bean Validation
+Aplicação do Repository Pattern através de interfaces que estendem o `JpaRepository`, abstraindo por completo as instruções SQL/JPQL nativas.
 
-- `@NotBlank`
-- `@CPF`
-- `@Email`
+## Data Transfer Objects (DTOs)
+
+Implementados utilizando `records` do Java para assegurar a imutabilidade física dos dados trafegados, evitando a exposição direta das entidades de banco de dados (`Entities`) na rede.
 
 ---
 
-## ✅ Paginação e Ordenação
+# 🔗 Mapeamento Relacional e Constraints
 
-Implementada na listagem de Pets para garantir escalabilidade.
+As classes de domínio foram modeladas para garantir a integridade referencial absoluta do banco de dados relacional:
 
----
+## Tutor (`tbl_tutor`)
 
-## ✅ Busca com Parâmetros
+Possui chaves exclusivas (`unique = true`) para os campos `nr_cpf` e `ds_email`, impedindo duplicidade cadastral de usuários no sistema.
 
-Filtro de busca de Pets por espécie.
+## Pet (`tbl_pet`)
 
----
+Estabelece um relacionamento `@ManyToOne` com `Tutor`, mapeado por uma chave estrangeira obrigatória (`nullable = false`), garantindo que nenhum animal fique sem um responsável legal associado.
 
-## ✅ Cache
+## CheckinHistorico e EventoConsulta
 
-Utilização de:
-
-- `@Cacheable`
-- `@CacheEvict`
+Possuem relacionamentos `@ManyToOne` obrigatórios direcionados à entidade `Pet`, consolidando o histórico longitudinal clínico de maneira amarrada e rastreável.
 
 ---
 
-## ✅ Tratamento Global de Erros
+# ⚙️ Funcionalidades e Requisitos Técnicos Atendidos
 
-`GlobalExceptionHandler`
+## ✅ CRUD Completo e Funcional
 
-### Retornos HTTP padronizados
+Operações completas de persistência, leitura, atualização e exclusão aplicadas em todos os módulos core:
 
-- `400`
-- `404`
-- `500`
+- Tutores
+- Pets
+- Check-ins
+- Eventos Clínicos
 
 ---
 
-## ✅ Documentação Interativa
+## ✅ Validação Estatística (Bean Validation)
 
-Swagger UI configurado para testes rápidos.
+Garantia da consistência de dados na entrada do Controller via interceptação `@Valid`:
+
+- `@NotBlank` para preenchimentos mandatórios de identificação.
+- `@CPF` da Hibernate Validator para impedir inserção de documentos inválidos.
+- `@Email` garantindo a formatação adequada de comunicação eletrônica.
+
+---
+
+## ✅ Paginação e Ordenação de Resultados
+
+Implementado o recebimento dinâmico de parâmetros de paginação através do objeto `Pageable` com ordenação padrão (`sort = "nome"`) na listagem geral de Pets, protegendo a aplicação contra gargalos de memória.
+
+---
+
+## ✅ Busca Parametrizada
+
+Método customizado `findByEspecieIgnoreCase` mapeado via Query Methods do Spring Data JPA, permitindo buscas flexíveis ignorando caixas altas ou baixas.
+
+---
+
+## ✅ Otimização de Performance (Spring Cache)
+
+- `@Cacheable` acoplado nos métodos de listagem e busca parametrizada para evitar acessos desnecessários ao banco de dados para queries idênticas.
+- `@CacheEvict(allEntries = true)` disparado nos métodos de escrita (atualizar e excluir) para garantir a invalidação correta e consistência do cache.
+
+---
+
+## ✅ Tratamento Centralizado de Erros (Exception Handler)
+
+Presença da classe especialista `GlobalExceptionHandler` anotada com `@ControllerAdvice`, eliminando vazamentos de stacktraces internos e capturando:
+
+- Falhas de validação sintática (`400 Bad Request`)
+- Entidades não encontradas por ID (`404 Not Found`)
+
+---
+
+## ✅ Modelo de Maturidade RESTful
+
+A API respeita os pilares do REST:
+
+- Uso correto de verbos HTTP (`POST`, `GET`, `PUT`, `DELETE`)
+- Mapeamentos lógicos no plural
+- Retorno apropriado de códigos HTTP
+- `204 No Content` para exclusões bem-sucedidas
 
 ---
 
@@ -107,36 +150,32 @@ Swagger UI configurado para testes rápidos.
 
 - Java 17 ou superior
 - Maven instalado
+- Opcional: Docker e Docker Compose
 
 ---
 
-## ▶️ Passo a Passo
+# ▶️ Modo 1: Execução Local Padrão (Banco H2 em Memória)
 
-### 1. Clone o repositório
+## Clone o repositório e navegue até a pasta
 
 ```bash
 git clone https://github.com/KuraVet-Challenge-2026/java-advanced.git
+cd java-advanced/kuravet
 ```
 
-### 2. Navegue até a pasta do projeto
-
-```bash
-cd java-advanced
-```
-
-### 3. Instale as dependências
+## Compile o projeto e instale as dependências
 
 ```bash
 mvn clean install
 ```
 
-### 4. Execute a aplicação
+## Execute o servidor Spring Boot
 
 ```bash
 mvn spring-boot:run
 ```
 
-### 5. Acesse a documentação Swagger
+## Acesse a documentação Swagger interativa
 
 ```bash
 http://localhost:8080/swagger-ui/index.html
@@ -144,32 +183,46 @@ http://localhost:8080/swagger-ui/index.html
 
 ---
 
-# 🔍 Documentação da API (Principais Endpoints)
+# ▶️ Modo 2: Execução via Docker Compose (Com Banco Oracle XE)
 
-# 👤 Tutores
+Para validar a portabilidade do projeto e a persistência em ambiente Oracle de produção, utilize a infraestrutura containerizada configurada no projeto.
 
-| Método | Endpoint | Descrição |
-|---|---|---|
-| POST | `/tutores` | Cadastra um novo tutor |
-| GET | `/tutores` | Lista todos os tutores |
-| PUT | `/tutores/{id}` | Atualiza dados de um tutor existente |
-| DELETE | `/tutores/{id}` | Remove um tutor do sistema |
+## Execute na raiz do projeto
 
----
+```bash
+docker-compose up --build
+```
 
-# 🐾 Pets
-
-| Método | Endpoint | Descrição |
-|---|---|---|
-| POST | `/pets` | Cadastra um pet vinculado a um tutor |
-| GET | `/pets` | Lista pets cadastrados (suporta paginação) |
-| GET | `/pets/busca?especie=Gato` | Filtra pets por espécie |
-| PUT | `/pets/{id}` | Atualiza dados de um pet existente |
-| DELETE | `/pets/{id}` | Remove um pet do sistema |
+Isso fará o download da imagem oficial do Oracle Database, subirá o banco e compilará a API apontando automaticamente para o perfil de produção (`SPRING_PROFILES_ACTIVE=docker`), expondo o serviço na porta `80`.
 
 ---
 
-# 📄 Exemplo de Paginação
+# 🔍 Documentação Completa dos Endpoints
+
+# 👤 Módulo: Tutores (`/tutores`)
+
+| Método | Endpoint | Descrição |
+|---|---|---|
+| POST | `/tutores` | Cadastra um novo tutor (Valida CPF e e-mail no corpo) |
+| GET | `/tutores` | Retorna uma lista de todos os tutores cadastrados |
+| PUT | `/tutores/{id}` | Atualiza todos os dados cadastrais do tutor por ID |
+| DELETE | `/tutores/{id}` | Exclui fisicamente o registro do tutor do banco de dados |
+
+---
+
+# 🐾 Módulo: Pets (`/pets`)
+
+| Método | Endpoint | Descrição |
+|---|---|---|
+| POST | `/pets` | Cadastra um pet obrigatoriamente acoplado ao ID de um Tutor |
+| GET | `/pets` | Listagem paginada e ordenada padrão por nome (`Page<PetResponseDTO>`) |
+| GET | `/pets/busca` | Filtro parametrizado por espécie exata utilizando Cache dinâmico |
+| PUT | `/pets/{id}` | Atualiza informações do animal e invalida o cache de leitura |
+| DELETE | `/pets/{id}` | Remove o registro e limpa os registros de cache (`allEntries = true`) |
+
+---
+
+# 📄 Sintaxe do Parâmetro de Paginação
 
 ```http
 GET /pets?page=0&size=5&sort=nome,asc
@@ -177,108 +230,82 @@ GET /pets?page=0&size=5&sort=nome,asc
 
 ---
 
-# 🩺 Histórico e Consultas
+# 🩺 Módulo: Histórico Clínico (`/checkins` e `/eventos`)
 
 | Método | Endpoint | Descrição |
 |---|---|---|
-| POST | `/checkins` | Registra um novo check-in de um pet |
-| GET | `/checkins` | Lista histórico de check-ins |
-| PUT | `/checkins/{id}` | Atualiza observações de um check-in |
-| DELETE | `/checkins/{id}` | Remove um check-in do sistema |
-| POST | `/eventos` | Registra uma nova consulta clínica |
-| GET | `/eventos` | Lista histórico de consultas |
-| PUT | `/eventos/{id}` | Atualiza diagnóstico/tratamento de uma consulta |
-| DELETE | `/eventos/{id}` | Remove o registro de uma consulta |
+| POST | `/checkins` | Registra uma nova entrada/admissão de um pet na recepção |
+| GET | `/checkins` | Lista todo o histórico cronológico de check-ins ocorridos |
+| PUT | `/checkins/{id}` | Permite editar as observações médicas anotadas na entrada |
+| DELETE | `/checkins/{id}` | Exclui o registro físico de um check-in de admissão |
+| POST | `/eventos` | Cria uma ocorrência de consulta clínica (diagnóstico/tratamento) |
+| GET | `/eventos` | Retorna o prontuário completo de consultas longitudinais |
+| PUT | `/eventos/{id}` | Edita as conclusões clínicas ou prescrições do atendimento |
+| DELETE | `/eventos/{id}` | Remove um evento de consulta médica |
 
 ---
 
-# 📂 Estrutura de Documentos para Avaliação
+# 📂 Organização dos Artefatos de Entrega
 
-Os arquivos abaixo encontram-se na pasta `/documentos` ou `/docs` na raiz do repositório.
-
-## 📁 Arquivos Entregáveis
-
-### 📌 Postman Collection
+Para fins de avaliação do corpo docente, os arquivos comprobatórios de testes e gerenciamento de configuração encontram-se estruturados na pasta `/documentos` do repositório:
 
 - `KuraVet-API.postman_collection.json`
+  - Arquivo exportado contendo o conjunto completo de requisições de teste lógico orquestradas (`POST → GET → PUT → DELETE`).
 
-### 📌 Diagramas
+- **Diagramas de Engenharia**
+  - Prints do Diagrama de Classes de Entidade e do DER (Modelo Entidade Relacionamento) sincronizados.
 
-- Diagrama de Classes
-- DER (Modelo Entidade Relacionamento)
+- **Cronograma Operacional**
+  - Documento discriminando a divisão transparente de tarefas (quem fez o quê e prazos cumpridos da Sprint).
 
-### 📌 Cronograma
-
-Documento detalhando divisão de tarefas e prazos.
-
-### 📌 Vídeo Pitch / Demonstração
-
-Link do YouTube do projeto.
+- **Link do Vídeo Demonstrativo**
+  - Link público direcionando à apresentação e execução da API publicada no YouTube.
 
 ---
 
-# 🧪 Instruções para Testes (Postman)
+# 🧪 Roteiro de Evidência de Teste Sintático (Postman)
 
-Para validar corretamente o funcionamento da API, siga esta ordem lógica:
+## 1️⃣ Criação do Tutor (`POST /tutores`)
 
-## 1️⃣ Cadastre um Tutor
+Insira um JSON válido com CPF de 11 dígitos numéricos limpos.
 
-```http
-POST /tutores
-```
+Salve o valor da propriedade `"id"` recebido na resposta.
 
-## 2️⃣ Cadastre um Pet vinculado ao Tutor
+---
 
-```http
-POST /pets
-```
+## 2️⃣ Vinculação do Pet (`POST /pets`)
 
-## 3️⃣ Registre um Check-in ou Consulta
+Envie os dados do animal passando no campo `"idTutor"` o número obtido no passo anterior para amarrar a chave estrangeira.
 
-```http
-POST /checkins
-POST /eventos
-```
+---
 
-## 4️⃣ Teste as atualizações, listagens e filtros
+## 3️⃣ Evolução do Fluxo Clínico (`POST /checkins` ou `POST /eventos`)
 
-```http
-PUT /tutores/{id}
-GET /pets
-GET /pets/busca
-GET /checkins
-GET /eventos
-DELETE /pets/{id}
-```
+Envie requisições referenciando o `"idPet"` para popular o prontuário preventivo longitudinal do paciente.
+
+---
+
+## 4️⃣ Validação de Queries e Performance (`GET`)
+
+Dispare o `GET /pets` para verificar a estrutura de paginação e use o `GET /pets/busca?especie=` repetidas vezes para observar o ganho drástico de velocidade através da resposta cacheada.
 
 ---
 
 # 🖼️ Preview da Aplicação
 
-<p align="center">
-  <a href="https://ibb.co/B2q6ttvw">
-    <img src="https://i.ibb.co/qYkgddhx/imagem.png" alt="Preview da aplicação KuraVet" border="0" width="100%">
-  </a>
-</p>
-
 ---
 
 # 📌 Objetivo Acadêmico
 
-Este projeto foi desenvolvido para aplicar conceitos avançados de:
+Este projeto foi desenvolvido para sedimentar os critérios práticos de avaliação da disciplina de Java Advanced:
 
-- APIs RESTful
-- Spring Boot
-- JPA/Hibernate
-- Arquitetura em Camadas
-- Persistência Relacional
-- Tratamento de Exceções
-- Cache e Performance
-- Documentação de APIs
-- Boas práticas em Java
+- Arquiteturas desacopladas e escaláveis
+- Padronização corporativa de tráfego de dados e barramento de segurança
+- Otimização de recursos de infraestrutura e performance computacional
+- Alinhamento de engenharia com as demandas técnicas do Challenge de 2026
 
 ---
 
 # 🐾 KuraVet
 
-### Transformando o cuidado veterinário em uma jornada contínua e inteligente.
+### Transformando o cuidado veterinário em uma jornada contínua, preventiva e inteligente.
