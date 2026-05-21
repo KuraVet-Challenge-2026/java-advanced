@@ -11,7 +11,7 @@ A plataforma permite que tutores e clínicas veterinárias acompanhem o históri
 ---
 
 # 📊 Diagrama de Classe UML
-
+<a href="https://ibb.co/JF7zGjMN"><img src="https://i.ibb.co/6JP4T0f2/imagem-2.png" alt="imagem (2)" border="0"></a>
 ---
 
 # 👥 Equipe (Squad)
