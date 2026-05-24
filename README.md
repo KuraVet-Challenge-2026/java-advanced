@@ -292,7 +292,7 @@ Dispare o `GET /pets` para verificar a estrutura de paginação e use o `GET /pe
 ---
 
 # 🖼️ Preview da Aplicação
-
+<a href="https://ibb.co/hxqp4nGs"><img src="https://i.ibb.co/WNTSMdrn/imagem-7.png" alt="imagem-7" border="0"></a>
 ---
 
 # 📌 Objetivo Acadêmico
