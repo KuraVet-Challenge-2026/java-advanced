@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>KuraVet - Painel</title>
+</head>
+<body>
+    <h1 th:text="${mensagem}">Bem-vindo(a) ao painel do KuraVet!</h1>
+
+    <p sec:authorize="isAuthenticated()">
+        Usuario logado: <span sec:authentication="name">usuario</span>
+    </p>
+
+    <form th:action="@{/logout}" method="post">
+        <button type="submit">Sair</button>
+    </form>
+</body>
+</html>
