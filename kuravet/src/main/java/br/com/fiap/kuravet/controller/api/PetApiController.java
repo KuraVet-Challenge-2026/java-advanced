@@ -1,5 +1,5 @@
 package br.com.fiap.kuravet.controller.api;
-
+import org.springframework.web.bind.annotation.CrossOrigin;
 import br.com.fiap.kuravet.dto.PetRequestDTO;
 import br.com.fiap.kuravet.dto.PetResponseDTO;
 import br.com.fiap.kuravet.exception.PetNaoEncontradoException;
@@ -30,6 +30,7 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/api/pets")
+@CrossOrigin(origins = "*")
 public class PetApiController {
 
     private final PetRepository petRepository;
