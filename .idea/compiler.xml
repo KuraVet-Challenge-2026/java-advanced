@@ -9,7 +9,10 @@
         <outputRelativeToContentRoot value="true" />
         <processorPath useClasspath="false">
           <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.46/lombok-1.18.46.jar" />
+<<<<<<< HEAD
           <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.46/lombok-1.18.46.jar" />
+=======
+>>>>>>> 6ffe238c465b5c471a6c37c73c1b2eba6b945448
         </processorPath>
         <module name="kuravet" />
       </profile>
