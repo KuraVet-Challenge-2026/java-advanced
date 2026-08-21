@@ -1,4 +1,4 @@
-package br.com.fiap.kuravet.dto;
+package br.com.fiap.kuravet.dto.pet;
 
 import br.com.fiap.kuravet.model.Pet;
 

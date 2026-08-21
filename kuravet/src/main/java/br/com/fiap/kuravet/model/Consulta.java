@@ -1,5 +1,6 @@
 package br.com.fiap.kuravet.model;
 
+import br.com.fiap.kuravet.enums.StatusConsulta;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;

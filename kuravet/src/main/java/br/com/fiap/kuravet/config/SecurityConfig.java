@@ -3,15 +3,14 @@ package br.com.fiap.kuravet.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 
 /**
@@ -20,19 +19,19 @@ import org.springframework.security.web.SecurityFilterChain;
  * <p>Duas cadeias de filtros isoladas:
  * <ul>
  *     <li>{@code /api/**}   - consumida pelo app mobile (React Native). Sem CSRF,
- *         sem sessao HTTP e sem redirecionamento para tela de login.</li>
- *     <li>demais rotas (ex: {@code /painel/**}) - portal web, protegido por
- *         formLogin() tradicional do Spring Security.</li>
+ *         sem sessao HTTP, autenticada via HTTP Basic contra a tabela USUARIO
+ *         ({@code br.com.fiap.kuravet.security.UsuarioDetailsService}).</li>
+ *     <li>demais rotas (portal web) - protegidas por formLogin() tradicional do
+ *         Spring Security; {@code /portal/**} exige perfil VETERINARIO.</li>
  * </ul>
+ *
+ * <p>Autorizacao por dono (TUTOR so ve/altera os proprios pets e consultas) e
+ * feita na camada de service, ja que depende de dados (nao so de rota/metodo).
  */
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
 
-    /**
-     * Cadeia de seguranca da API mobile: totalmente desprotegida de CSRF,
-     * stateless (sem JSESSIONID) e sem exigir autenticacao nesta Sprint.
-     */
     @Bean
     @Order(1)
     public SecurityFilterChain apiSecurityFilterChain(HttpSecurity http) throws Exception {
@@ -40,21 +39,26 @@ public class SecurityConfig {
                 .securityMatcher("/api/**")
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
+                .httpBasic(Customizer.withDefaults())
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/api/ping").permitAll()
+                        .requestMatchers(HttpMethod.PATCH, "/api/consultas/*/diagnostico").hasRole("VETERINARIO")
+                        .requestMatchers(HttpMethod.POST, "/api/pets").hasRole("TUTOR")
+                        .requestMatchers(HttpMethod.PUT, "/api/pets/*").hasRole("TUTOR")
+                        .requestMatchers(HttpMethod.DELETE, "/api/pets/*").hasRole("TUTOR")
+                        .anyRequest().authenticated()
+                );
 
         return http.build();
     }
 
-    /**
-     * Cadeia de seguranca do portal web: exige autenticacao via formLogin()
-     * padrao, com CSRF habilitado (comportamento padrao do Spring Security).
-     */
     @Bean
     @Order(2)
     public SecurityFilterChain webSecurityFilterChain(HttpSecurity http) throws Exception {
         http
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/painel/**").authenticated()
+                        .requestMatchers("/login").permitAll()
+                        .requestMatchers("/portal/**").hasRole("VETERINARIO")
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form
@@ -63,25 +67,6 @@ public class SecurityConfig {
                 );
 
         return http.build();
-    }
-
-    /**
-     * Usuarios em memoria apenas para fins de desenvolvimento desta Sprint 3.
-     * Deve ser substituido por uma origem persistente (banco) futuramente.
-     */
-    @Bean
-    public UserDetailsService userDetailsService(PasswordEncoder passwordEncoder) {
-        var veterinario = User.withUsername("veterinario")
-                .password(passwordEncoder.encode("vet123"))
-                .roles("VETERINARIO")
-                .build();
-
-        var tutor = User.withUsername("tutor")
-                .password(passwordEncoder.encode("tutor123"))
-                .roles("TUTOR")
-                .build();
-
-        return new InMemoryUserDetailsManager(veterinario, tutor);
     }
 
     @Bean

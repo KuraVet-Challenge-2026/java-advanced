@@ -1,14 +1,16 @@
-package br.com.fiap.kuravet.dto;
+package br.com.fiap.kuravet.dto.pet;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Past;
 
 import java.time.LocalDate;
 
 /**
  * Payload de entrada para cadastro/atualizacao de PET via API mobile.
- * Trafega apenas os dados necessarios, sem expor a entidade JPA
- * {@link br.com.fiap.kuravet.model.Pet} diretamente ao cliente React Native.
+ * Nao carrega idTutor: o dono do pet e sempre o TUTOR autenticado
+ * (ver {@link br.com.fiap.kuravet.service.PetService}), nunca um valor
+ * vindo do cliente.
  */
 public record PetRequestDTO(
 
@@ -21,12 +23,10 @@ public record PetRequestDTO(
         String raca,
 
         @NotNull(message = "A data de nascimento e obrigatoria.")
+        @Past(message = "A data de nascimento deve estar no passado.")
         LocalDate dataNascimento,
 
         @NotNull(message = "O sexo do pet e obrigatorio (M ou F).")
-        Character sexo,
-
-        @NotNull(message = "O ID do tutor e obrigatorio para vincular o pet.")
-        Long idTutor
+        Character sexo
 ) {
 }

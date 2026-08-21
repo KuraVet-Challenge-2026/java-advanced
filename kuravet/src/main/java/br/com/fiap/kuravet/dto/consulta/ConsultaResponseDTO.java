@@ -1,7 +1,7 @@
-package br.com.fiap.kuravet.dto;
+package br.com.fiap.kuravet.dto.consulta;
 
 import br.com.fiap.kuravet.model.Consulta;
-import br.com.fiap.kuravet.model.StatusConsulta;
+import br.com.fiap.kuravet.enums.StatusConsulta;
 
 import java.time.LocalDate;
 

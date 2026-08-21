@@ -1,5 +1,9 @@
-package br.com.fiap.kuravet.exception;
+package br.com.fiap.kuravet.exception.handler;
 
+import br.com.fiap.kuravet.exception.ConsultaNaoEncontradaException;
+import br.com.fiap.kuravet.exception.PetNaoEncontradoException;
+import br.com.fiap.kuravet.exception.RegraDeNegocioException;
+import br.com.fiap.kuravet.exception.TutorNaoEncontradoException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;

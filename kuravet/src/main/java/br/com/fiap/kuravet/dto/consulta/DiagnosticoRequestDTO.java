@@ -1,4 +1,4 @@
-package br.com.fiap.kuravet.dto;
+package br.com.fiap.kuravet.dto.consulta;
 
 import jakarta.validation.constraints.NotBlank;
 

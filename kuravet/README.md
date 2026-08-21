@@ -2,8 +2,9 @@
 
 Plataforma de saúde preventiva contínua para pets. Backend em **Spring Boot** que expõe:
 
-- um **portal web** (Thymeleaf + Spring Security) para tutores e veterinários autenticados;
-- uma **API REST** (`/api/**`) consumida por um app mobile (React Native), sem autenticação nesta sprint.
+- um **portal web** (Thymeleaf + Spring Security), em `/portal/**`, restrito ao perfil VETERINARIO;
+- uma **API REST** (`/api/**`) consumida por um app mobile (React Native), autenticada via HTTP Basic
+  contra a tabela `USUARIO` — um TUTOR só enxerga e altera os próprios pets e consultas.
 
 Projeto acadêmico (FIAP) que utiliza banco de dados **Oracle** em nuvem, com controle de schema via **Flyway**.
 
@@ -78,6 +79,9 @@ spring.flyway.baseline-version=0
 
 # Thymeleaf
 spring.thymeleaf.cache=false
+
+# Schema é propriedade do Flyway; Hibernate só valida contra ele
+spring.jpa.hibernate.ddl-auto=validate
 ```
 
 > ⚠️ **Antes de rodar**, substitua `spring.datasource.username` e `spring.datasource.password` pelas suas credenciais do banco Oracle da FIAP. Evite commitar credenciais reais em repositórios públicos — prefira variáveis de ambiente ou um `application-local.properties` fora do controle de versão quando possível.
@@ -141,15 +145,16 @@ O schema é criado e versionado automaticamente pelo Flyway ao iniciar a aplica�
 
 ```
 src/main/resources/db/migration/
-├── V1__Criar_Tabelas_Core.sql
-├── V2__Carga_Dados_Iniciais.sql
-├── V3__Procedures_Functions_Trigger.sql
-└── V4__Sequences_Pk.sql
+├── V1__schema.sql                        # DDL: tutor, veterinario, pet, consulta, usuario
+├── V2__seed_perfis_e_veterinario.sql      # veterinários + usuário de perfil VETERINARIO
+└── V3__seed_tutor_inicial.sql             # tutor inicial + usuário de perfil TUTOR
 ```
 
-Não é necessário rodar nenhum script manualmente — basta iniciar a aplicação com um schema Oracle válido e vazio (ou já controlado pelo Flyway) que as tabelas, dados iniciais, procedures/functions/trigger e sequences são criados na primeira execução.
+Não é necessário rodar nenhum script manualmente — basta iniciar a aplicação com um schema Oracle válido e vazio (ou já controlado pelo Flyway) que as tabelas e os dados iniciais são criados na primeira execução. O schema é propriedade do Flyway: `spring.jpa.hibernate.ddl-auto=validate` faz o Hibernate só conferir se as entidades batem com o que o Flyway criou, nunca alterar o schema.
 
-O arquivo `script_bd.sql`, na raiz do módulo, é um script auxiliar equivalente (para execução manual direta em um cliente Oracle, ex. SQL Developer), útil para inspecionar/recriar o schema fora do fluxo do Spring Boot.
+> ⚠️ Se o seu schema Oracle já tinha as migrations antigas (`V1__Criar_Tabelas_Core.sql` e demais) aplicadas, o histórico do Flyway (`flyway_schema_history`) não bate mais com este novo conjunto V1–V3. Antes de rodar a aplicação, resete o schema — veja [Problemas comuns](#problemas-comuns).
+
+O arquivo `script_bd.sql`, na raiz do módulo, é um script SQL independente (procedures, function, trigger de auditoria, tabela de pagamentos) para execução manual em um cliente Oracle (ex. SQL Developer); não faz parte do schema gerenciado pelo Flyway nem é usado pela aplicação Spring.
 
 ---
 
@@ -157,40 +162,54 @@ O arquivo `script_bd.sql`, na raiz do módulo, é um script auxiliar equivalente
 
 ### Portal web (Thymeleaf)
 
-| Rota       | Descrição                                   | Acesso         |
-|------------|----------------------------------------------|----------------|
-| `/login`   | Tela de login                                 | Público        |
-| `/painel`  | Painel autenticado                            | Requer login   |
+| Rota             | Descrição                | Acesso                      |
+|------------------|---------------------------|-------------------------------|
+| `/login`         | Tela de login              | Público                       |
+| `/portal/painel` | Painel autenticado          | Requer login, perfil VETERINARIO |
 
-Usuários de teste (em memória, definidos em `SecurityConfig`):
+Usuário de teste (persistido via migration `V2__seed_perfis_e_veterinario.sql`):
 
-| Usuário       | Senha       | Papel (role)   |
+| Usuário       | Senha       | Perfil        |
 |---------------|-------------|----------------|
 | `veterinario` | `vet123`    | `VETERINARIO`  |
-| `tutor`       | `tutor123`  | `TUTOR`        |
-
-> Esses usuários são fixos em memória apenas para fins de desenvolvimento e serão substituídos por uma origem persistente (banco) em sprints futuras.
 
 ### API REST
 
 Base URL: `http://localhost:8080/api`
 
-As rotas `/api/**` **não exigem autenticação** nesta sprint (pensadas para consumo pelo app mobile).
+As rotas `/api/**` exigem autenticação **HTTP Basic** contra a tabela `USUARIO`, exceto `/api/ping`.
+Um usuário TUTOR só enxerga e altera os próprios pets e consultas; um VETERINARIO tem acesso irrestrito
+e é o único que pode emitir diagnóstico. Cadastro/edição/exclusão de pet é exclusivo de TUTOR — o dono
+é sempre o usuário autenticado, nunca um `idTutor` enviado no corpo da requisição.
 
-| Método   | Rota                                | Descrição                                              |
-|----------|--------------------------------------|----------------------------------------------------------|
-| `GET`    | `/api/ping`                          | Health-check simples (retorna `"pong"`)                  |
-| `GET`    | `/api/pets`                          | Lista todos os pets                                       |
-| `GET`    | `/api/pets/{id}`                     | Busca um pet pelo ID                                       |
-| `POST`   | `/api/pets`                          | Cadastra um novo pet                                       |
-| `PUT`    | `/api/pets/{id}`                     | Atualiza um pet existente                                  |
-| `DELETE` | `/api/pets/{id}`                     | Exclui um pet                                              |
-| `PATCH`  | `/api/consultas/{id}/diagnostico`    | Encerra a consulta emitindo o diagnóstico                  |
+Usuário de teste (persistido via migration `V3__seed_tutor_inicial.sql`):
+
+| Usuário  | Senha       | Perfil    |
+|----------|-------------|------------|
+| `tutor`  | `tutor123`  | `TUTOR`    |
+
+| Método   | Rota                                | Acesso                    | Descrição                              |
+|----------|--------------------------------------|-----------------------------|------------------------------------------|
+| `GET`    | `/api/ping`                          | Público                    | Health-check simples (retorna `"pong"`)   |
+| `GET`    | `/api/pets`                          | Autenticado                | Lista pets (TUTOR: só os próprios)        |
+| `GET`    | `/api/pets/{id}`                     | Autenticado                | Busca um pet pelo ID                       |
+| `POST`   | `/api/pets`                          | TUTOR                      | Cadastra um pet para o tutor autenticado   |
+| `PUT`    | `/api/pets/{id}`                     | TUTOR                      | Atualiza um pet próprio                    |
+| `DELETE` | `/api/pets/{id}`                     | TUTOR                      | Exclui um pet próprio                      |
+| `GET`    | `/api/tutores`, `/api/tutores/{id}`  | Autenticado                | Lista/busca tutores                        |
+| `POST`, `PUT`, `DELETE` | `/api/tutores/**`      | Autenticado                | CRUD de tutores                            |
+| `GET`    | `/api/consultas`                     | Autenticado                | Lista consultas (TUTOR: só as próprias)    |
+| `GET`    | `/api/consultas/{id}`                | Autenticado                | Busca uma consulta pelo ID                 |
+| `POST`   | `/api/consultas`                     | Autenticado                | Agenda uma consulta (status inicial `AGENDADA`) |
+| `PUT`    | `/api/consultas/{id}`                | Autenticado                | Atualiza pet/veterinário/data/tipo         |
+| `DELETE` | `/api/consultas/{id}`                | Autenticado                | Exclui uma consulta                        |
+| `PATCH`  | `/api/consultas/{id}/diagnostico`    | VETERINARIO                 | Encerra a consulta emitindo o diagnóstico  |
 
 #### Exemplo — cadastrar pet
 
 ```http
 POST /api/pets
+Authorization: Basic dHV0b3I6dHV0b3IxMjM=
 Content-Type: application/json
 
 {
@@ -198,8 +217,7 @@ Content-Type: application/json
   "especie": "Cachorro",
   "raca": "Labrador",
   "dataNascimento": "2022-03-15",
-  "sexo": "M",
-  "idTutor": 1
+  "sexo": "M"
 }
 ```
 
@@ -286,13 +304,14 @@ kuravet/
 └── src/main/
     ├── java/br/com/fiap/kuravet/
     │   ├── KuravetApplication.java
-    │   ├── config/              # SecurityConfig
-    │   ├── controller/          # Web (Thymeleaf) e REST (/api/**)
-    │   ├── dto/                 # Records de entrada/saída da API
-    │   ├── exception/            # Exceções de negócio + handler global
-    │   ├── model/                # Entidades JPA (Tutor, Pet, Veterinario, Consulta...)
-    │   ├── repository/           # Spring Data JPA repositories
-    │   └── service/              # Regras de negócio (ex.: ConsultaService)
+    │   ├── config/                # SecurityConfig, CorsConfig
+    │   ├── controller/            # controller/api (REST) e controller/web (Thymeleaf)
+    │   ├── dto/                   # Records de entrada/saída da API, por domínio (dto/pet, dto/tutor, dto/consulta)
+    │   ├── exception/              # Exceções de negócio + handler global (exception/handler)
+    │   ├── model/                  # Entidades JPA (Tutor, Pet, Veterinario, Consulta, Usuario...)
+    │   ├── repository/             # Spring Data JPA repositories
+    │   ├── security/                # UsuarioPrincipal, UsuarioDetailsService (autenticação via USUARIO)
+    │   └── service/                 # Regras de negócio (ex.: ConsultaService)
     └── resources/
         ├── application.properties
         ├── db/migration/         # Scripts versionados do Flyway
@@ -306,3 +325,35 @@ kuravet/
 - **`Failed to determine a suitable driver class`**: as credenciais/URL do banco em `application.properties` não foram carregadas corretamente — confira se o arquivo está salvo em UTF-8 e se `spring.datasource.*` está preenchido.
 - **`Found non-empty schema(s) ... but no schema history table`**: o schema Oracle já tem tabelas criadas fora do Flyway (ex.: via `script_bd.sql` manual). Garanta que `spring.flyway.baseline-on-migrate=true` esteja habilitado, ou limpe o schema antes de rodar a aplicação pela primeira vez.
 - **Timeout/erro de conexão com `oracle.fiap.com.br`**: verifique se você está conectado à rede/VPN da FIAP e se as credenciais do schema estão corretas.
+- **`Validate failed: Migrations have failed validation` / `Migration checksum mismatch`**: seu schema já tinha o conjunto antigo de migrations (`V1__Criar_Tabelas_Core.sql` e demais) aplicado antes da reorganização para `V1__schema.sql`/`V2__seed_perfis_e_veterinario.sql`/`V3__seed_tutor_inicial.sql`. Resete o schema antes de rodar a aplicação de novo — conecte no seu usuário Oracle (ex. via SQL Developer) e rode:
+
+  ```sql
+  BEGIN EXECUTE IMMEDIATE 'DROP TABLE CONSULTA CASCADE CONSTRAINTS PURGE'; EXCEPTION WHEN OTHERS THEN NULL; END;
+  /
+  BEGIN EXECUTE IMMEDIATE 'DROP TABLE USUARIO CASCADE CONSTRAINTS PURGE'; EXCEPTION WHEN OTHERS THEN NULL; END;
+  /
+  BEGIN EXECUTE IMMEDIATE 'DROP TABLE PET CASCADE CONSTRAINTS PURGE'; EXCEPTION WHEN OTHERS THEN NULL; END;
+  /
+  BEGIN EXECUTE IMMEDIATE 'DROP TABLE VETERINARIO CASCADE CONSTRAINTS PURGE'; EXCEPTION WHEN OTHERS THEN NULL; END;
+  /
+  BEGIN EXECUTE IMMEDIATE 'DROP TABLE TUTOR CASCADE CONSTRAINTS PURGE'; EXCEPTION WHEN OTHERS THEN NULL; END;
+  /
+  BEGIN EXECUTE IMMEDIATE 'DROP TABLE FATO_PAGAMENTO CASCADE CONSTRAINTS PURGE'; EXCEPTION WHEN OTHERS THEN NULL; END;
+  /
+  BEGIN EXECUTE IMMEDIATE 'DROP TABLE AUDITORIA_LOG CASCADE CONSTRAINTS PURGE'; EXCEPTION WHEN OTHERS THEN NULL; END;
+  /
+  BEGIN EXECUTE IMMEDIATE 'DROP TRIGGER TRG_AUDITORIA_CONSULTA'; EXCEPTION WHEN OTHERS THEN NULL; END;
+  /
+  BEGIN EXECUTE IMMEDIATE 'DROP SEQUENCE SEQ_TUTOR'; EXCEPTION WHEN OTHERS THEN NULL; END;
+  /
+  BEGIN EXECUTE IMMEDIATE 'DROP SEQUENCE SEQ_VETERINARIO'; EXCEPTION WHEN OTHERS THEN NULL; END;
+  /
+  BEGIN EXECUTE IMMEDIATE 'DROP SEQUENCE SEQ_PET'; EXCEPTION WHEN OTHERS THEN NULL; END;
+  /
+  BEGIN EXECUTE IMMEDIATE 'DROP SEQUENCE SEQ_CONSULTA'; EXCEPTION WHEN OTHERS THEN NULL; END;
+  /
+  BEGIN EXECUTE IMMEDIATE 'DROP TABLE FLYWAY_SCHEMA_HISTORY CASCADE CONSTRAINTS PURGE'; EXCEPTION WHEN OTHERS THEN NULL; END;
+  /
+  ```
+
+  Depois disso, o próximo `spring-boot:run` recria tudo do zero a partir de `V1__schema.sql`.
