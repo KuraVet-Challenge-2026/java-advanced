@@ -1,0 +1,6 @@
+### IntelliJ IDEA - configuracao de IDE nao vai para o Git ###
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
