@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout :: cabeca('Solicitacoes')}"></head>
+<body>
+
+<header th:replace="~{layout :: topo('solicitacoes')}"></header>
+
+<main>
+    <h1>Solicitacoes de teleconsulta</h1>
+    <p class="legenda">Pedidos enviados pelos tutores, aguardando aprovacao.</p>
+
+    <div th:replace="~{layout :: aviso}"></div>
+
+    <div class="quadro">
+        <table>
+            <thead>
+            <tr>
+                <th>Pet</th>
+                <th>Tutor</th>
+                <th>Veterinario</th>
+                <th>Solicitado em</th>
+                <th>Data desejada</th>
+                <th>Tipo</th>
+                <th>Acoes</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="c : ${solicitacoes}">
+                <td><a th:href="@{/portal/consultas/{id}(id=${c.idConsulta})}" th:text="${c.pet.nome}">Pet</a></td>
+                <td th:text="${c.pet.tutor.nome}">Tutor</td>
+                <td th:text="${c.veterinario.nome}">Vet</td>
+                <td th:text="${#temporals.format(c.dataSolicitacao, 'dd/MM/yyyy')}">--</td>
+                <td th:text="${#temporals.format(c.dataConsulta, 'dd/MM/yyyy')}">--</td>
+                <td th:text="${c.tipoConsulta}">Tipo</td>
+                <td>
+                    <div class="acoes">
+                        <form th:action="@{/portal/solicitacoes/{id}/aprovar(id=${c.idConsulta})}" method="post">
+                            <button type="submit" class="botao botao-principal">Aprovar</button>
+                        </form>
+                        <a class="botao botao-perigo"
+                           th:href="@{/portal/solicitacoes/{id}/recusar(id=${c.idConsulta})}">Recusar</a>
+                    </div>
+                </td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(solicitacoes)}">
+                <td colspan="7" class="vazio">Nenhuma solicitacao pendente no momento.</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</main>
+
+</body>
+</html>

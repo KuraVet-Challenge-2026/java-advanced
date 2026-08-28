@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout :: cabeca('Erro')}"></head>
+<body>
+
+<header th:replace="~{layout :: topo('')}"></header>
+
+<main>
+    <h1 th:text="${titulo}">Algo deu errado</h1>
+    <p class="aviso aviso-erro" th:text="${mensagem}">Detalhe do erro.</p>
+    <a class="botao botao-secundario" th:href="@{/portal/painel}">Voltar ao painel</a>
+</main>
+
+</body>
+</html>

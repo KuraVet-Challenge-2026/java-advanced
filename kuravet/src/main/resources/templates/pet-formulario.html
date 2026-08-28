@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout :: cabeca('Pet')}"></head>
+<body>
+
+<header th:replace="~{layout :: topo('pets')}"></header>
+
+<main>
+    <h1 th:text="${edicao} ? 'Editar pet' : 'Cadastrar pet'">Pet</h1>
+    <p class="legenda">Os campos marcados sao obrigatorios.</p>
+
+    <form class="formulario" method="post" th:object="${petForm}"
+          th:action="${edicao}
+              ? @{/portal/pets/{id}(id=*{idPet})}
+              : @{/portal/pets}">
+
+        <div class="grade-form">
+            <div>
+                <label for="nome">Nome</label>
+                <input type="text" id="nome" th:field="*{nome}"
+                       th:classappend="${#fields.hasErrors('nome')} ? 'campo-invalido'">
+                <p class="erro-campo" th:if="${#fields.hasErrors('nome')}" th:errors="*{nome}"></p>
+            </div>
+
+            <div>
+                <label for="idTutor">Tutor responsavel</label>
+                <select id="idTutor" th:field="*{idTutor}"
+                        th:classappend="${#fields.hasErrors('idTutor')} ? 'campo-invalido'">
+                    <option value="">Selecione...</option>
+                    <option th:each="t : ${tutores}"
+                            th:value="${t.idTutor}"
+                            th:text="${t.nome}">Tutor</option>
+                </select>
+                <p class="erro-campo" th:if="${#fields.hasErrors('idTutor')}" th:errors="*{idTutor}"></p>
+            </div>
+
+            <div>
+                <label for="especie">Especie</label>
+                <input type="text" id="especie" th:field="*{especie}"
+                       th:classappend="${#fields.hasErrors('especie')} ? 'campo-invalido'"
+                       placeholder="Cachorro, Gato...">
+                <p class="erro-campo" th:if="${#fields.hasErrors('especie')}" th:errors="*{especie}"></p>
+            </div>
+
+            <div>
+                <label for="raca">Raca</label>
+                <input type="text" id="raca" th:field="*{raca}"
+                       th:classappend="${#fields.hasErrors('raca')} ? 'campo-invalido'">
+                <p class="erro-campo" th:if="${#fields.hasErrors('raca')}" th:errors="*{raca}"></p>
+            </div>
+
+            <div>
+                <label for="dataNascimento">Data de nascimento</label>
+                <input type="date" id="dataNascimento" th:field="*{dataNascimento}"
+                       th:classappend="${#fields.hasErrors('dataNascimento')} ? 'campo-invalido'">
+                <p class="erro-campo" th:if="${#fields.hasErrors('dataNascimento')}" th:errors="*{dataNascimento}"></p>
+            </div>
+
+            <div>
+                <label for="sexo">Sexo</label>
+                <select id="sexo" th:field="*{sexo}"
+                        th:classappend="${#fields.hasErrors('sexo')} ? 'campo-invalido'">
+                    <option value="">Selecione...</option>
+                    <option value="M">Macho</option>
+                    <option value="F">Femea</option>
+                </select>
+                <p class="erro-campo" th:if="${#fields.hasErrors('sexo')}" th:errors="*{sexo}"></p>
+            </div>
+        </div>
+
+        <div class="rodape-form">
+            <button type="submit" class="botao botao-principal"
+                    th:text="${edicao} ? 'Salvar alteracoes' : 'Cadastrar'">Salvar</button>
+            <a class="botao botao-secundario" th:href="@{/portal/pets}">Cancelar</a>
+        </div>
+    </form>
+</main>
+
+</body>
+</html>

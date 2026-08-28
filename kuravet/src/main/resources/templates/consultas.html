@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout :: cabeca('Consultas')}"></head>
+<body>
+
+<header th:replace="~{layout :: topo('consultas')}"></header>
+
+<main>
+    <h1>Consultas</h1>
+    <p class="legenda">Historico completo, filtravel por etapa do fluxo.</p>
+
+    <div th:replace="~{layout :: aviso}"></div>
+
+    <form th:action="@{/portal/consultas}" method="get" style="margin-bottom:20px">
+        <div style="display:flex; gap:10px; align-items:flex-end; max-width:420px">
+            <div style="flex:1">
+                <label for="status">Filtrar por status</label>
+                <select id="status" name="status">
+                    <option value="">Todas</option>
+                    <option th:each="s : ${todosOsStatus}"
+                            th:value="${s}"
+                            th:text="${s}"
+                            th:selected="${s == statusSelecionado}">STATUS</option>
+                </select>
+            </div>
+            <button type="submit" class="botao botao-secundario">Aplicar</button>
+        </div>
+    </form>
+
+    <div class="quadro">
+        <table>
+            <thead>
+            <tr>
+                <th>#</th>
+                <th>Pet</th>
+                <th>Tutor</th>
+                <th>Veterinario</th>
+                <th>Data</th>
+                <th>Tipo</th>
+                <th>Status</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="c : ${consultas}">
+                <td><a th:href="@{/portal/consultas/{id}(id=${c.idConsulta})}" th:text="${c.idConsulta}">1</a></td>
+                <td th:text="${c.pet.nome}">Pet</td>
+                <td th:text="${c.pet.tutor.nome}">Tutor</td>
+                <td th:text="${c.veterinario.nome}">Vet</td>
+                <td th:text="${#temporals.format(c.dataConsulta, 'dd/MM/yyyy')}">--</td>
+                <td th:text="${c.tipoConsulta}">Tipo</td>
+                <td><span class="selo" th:classappend="'selo-' + ${c.status}" th:text="${c.status}">STATUS</span></td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(consultas)}">
+                <td colspan="7" class="vazio">Nenhuma consulta encontrada com esse filtro.</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</main>
+
+</body>
+</html>

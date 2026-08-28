@@ -1,19 +1,49 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org"
-      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
-<head>
-    <meta charset="UTF-8">
-    <title>KuraVet - Painel</title>
-</head>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout :: cabeca('Painel')}"></head>
 <body>
-    <h1 th:text="${mensagem}">Bem-vindo(a) ao painel do KuraVet!</h1>
 
-    <p sec:authorize="isAuthenticated()">
-        Usuario logado: <span sec:authentication="name">usuario</span>
-    </p>
+<header th:replace="~{layout :: topo('painel')}"></header>
 
-    <form th:action="@{/logout}" method="post">
-        <button type="submit">Sair</button>
-    </form>
+<main>
+    <h1>Painel da clinica</h1>
+    <p class="legenda">Visao geral das teleconsultas em cada etapa do fluxo.</p>
+
+    <div class="indicadores">
+        <a class="indicador" th:href="@{/portal/solicitacoes}">
+            <div class="numero" th:text="${totalSolicitadas}">0</div>
+            <div class="rotulo">Aguardando aprovacao</div>
+        </a>
+        <a class="indicador" th:href="@{/portal/consultas(status='AGENDADA')}">
+            <div class="numero" th:text="${totalAgendadas}">0</div>
+            <div class="rotulo">Agendadas</div>
+        </a>
+        <a class="indicador" th:href="@{/portal/consultas(status='REALIZADA')}">
+            <div class="numero" th:text="${totalRealizadas}">0</div>
+            <div class="rotulo">Realizadas</div>
+        </a>
+        <a class="indicador" th:href="@{/portal/consultas(status='RECUSADA')}">
+            <div class="numero" th:text="${totalRecusadas}">0</div>
+            <div class="rotulo">Recusadas</div>
+        </a>
+    </div>
+
+    <h2>Como funciona o fluxo</h2>
+    <div class="quadro" style="padding:20px">
+        <p style="margin:0 0 8px">
+            O tutor solicita a teleconsulta pelo aplicativo. O pedido chega aqui como
+            <span class="selo selo-SOLICITADA">SOLICITADA</span> e aguarda sua decisao.
+        </p>
+        <p style="margin:0 0 8px">
+            Ao aprovar, vira <span class="selo selo-AGENDADA">AGENDADA</span>; ao recusar,
+            <span class="selo selo-RECUSADA">RECUSADA</span> com o motivo registrado e visivel ao tutor.
+        </p>
+        <p style="margin:0">
+            Depois do atendimento, o diagnostico encerra a consulta como
+            <span class="selo selo-REALIZADA">REALIZADA</span>.
+        </p>
+    </div>
+</main>
+
 </body>
 </html>

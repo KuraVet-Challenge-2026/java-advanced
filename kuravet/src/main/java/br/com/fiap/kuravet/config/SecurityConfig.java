@@ -18,15 +18,16 @@ import org.springframework.security.web.SecurityFilterChain;
  *
  * <p>Duas cadeias de filtros isoladas:
  * <ul>
- *     <li>{@code /api/**}   - consumida pelo app mobile (React Native). Sem CSRF,
+ *     <li>{@code /api/**} - consumida pelo app mobile (React Native). Sem CSRF,
  *         sem sessao HTTP, autenticada via HTTP Basic contra a tabela USUARIO
  *         ({@code br.com.fiap.kuravet.security.UsuarioDetailsService}).</li>
  *     <li>demais rotas (portal web) - protegidas por formLogin() tradicional do
  *         Spring Security; {@code /portal/**} exige perfil VETERINARIO.</li>
  * </ul>
  *
- * <p>Autorizacao por dono (TUTOR so ve/altera os proprios pets e consultas) e
- * feita na camada de service, ja que depende de dados (nao so de rota/metodo).
+ * <p>Aqui ficam apenas as regras que dependem de rota e metodo HTTP. A
+ * autorizacao por dono (um TUTOR so ve e altera os proprios pets e consultas)
+ * depende dos dados e por isso vive na camada de service.
  */
 @Configuration
 @EnableWebSecurity
@@ -42,10 +43,18 @@ public class SecurityConfig {
                 .httpBasic(Customizer.withDefaults())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/ping").permitAll()
+
+                        // Fluxo de teleconsulta: quem pede e o tutor, quem decide e o veterinario
+                        .requestMatchers(HttpMethod.POST, "/api/consultas/solicitacoes").hasRole("TUTOR")
+                        .requestMatchers(HttpMethod.PATCH, "/api/consultas/*/aprovacao").hasRole("VETERINARIO")
+                        .requestMatchers(HttpMethod.PATCH, "/api/consultas/*/recusa").hasRole("VETERINARIO")
                         .requestMatchers(HttpMethod.PATCH, "/api/consultas/*/diagnostico").hasRole("VETERINARIO")
+
+                        // Cadastro, edicao e exclusao de pet sao exclusivos do tutor dono
                         .requestMatchers(HttpMethod.POST, "/api/pets").hasRole("TUTOR")
                         .requestMatchers(HttpMethod.PUT, "/api/pets/*").hasRole("TUTOR")
                         .requestMatchers(HttpMethod.DELETE, "/api/pets/*").hasRole("TUTOR")
+
                         .anyRequest().authenticated()
                 );
 
@@ -57,12 +66,17 @@ public class SecurityConfig {
     public SecurityFilterChain webSecurityFilterChain(HttpSecurity http) throws Exception {
         http
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/login").permitAll()
+                        .requestMatchers("/login", "/css/**", "/js/**", "/img/**").permitAll()
                         .requestMatchers("/portal/**").hasRole("VETERINARIO")
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form
                         .loginPage("/login")
+                        .defaultSuccessUrl("/portal/painel", true)
+                        .permitAll()
+                )
+                .logout(logout -> logout
+                        .logoutSuccessUrl("/login?logout")
                         .permitAll()
                 );
 

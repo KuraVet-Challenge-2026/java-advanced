@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout :: cabeca('Recusar solicitacao')}"></head>
+<body>
+
+<header th:replace="~{layout :: topo('solicitacoes')}"></header>
+
+<main>
+    <h1>Recusar solicitacao</h1>
+    <p class="legenda">
+        Teleconsulta de <strong th:text="${consulta.pet.nome}">Pet</strong>,
+        solicitada por <span th:text="${consulta.pet.tutor.nome}">Tutor</span>
+        para <span th:text="${#temporals.format(consulta.dataConsulta, 'dd/MM/yyyy')}">--</span>.
+    </p>
+
+    <form class="formulario" th:action="@{/portal/solicitacoes/{id}/recusar(id=${consulta.idConsulta})}"
+          th:object="${recusaForm}" method="post">
+
+        <label for="motivo">Motivo da recusa</label>
+        <textarea id="motivo" th:field="*{motivo}"
+                  th:classappend="${#fields.hasErrors('motivo')} ? 'campo-invalido'"
+                  placeholder="Explique ao tutor por que o atendimento remoto nao e adequado neste caso."></textarea>
+
+        <p class="erro-campo" th:if="${#fields.hasErrors('motivo')}" th:errors="*{motivo}"></p>
+        <p class="ajuda" th:unless="${#fields.hasErrors('motivo')}">
+            Entre 10 e 300 caracteres. O tutor vera esta mensagem no aplicativo.
+        </p>
+
+        <div class="rodape-form">
+            <button type="submit" class="botao botao-perigo">Confirmar recusa</button>
+            <a class="botao botao-secundario" th:href="@{/portal/solicitacoes}">Voltar</a>
+        </div>
+    </form>
+</main>
+
+</body>
+</html>

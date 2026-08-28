@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout :: cabeca('Pets')}"></head>
+<body>
+
+<header th:replace="~{layout :: topo('pets')}"></header>
+
+<main>
+    <div style="display:flex; justify-content:space-between; align-items:flex-start">
+        <div>
+            <h1>Pets cadastrados</h1>
+            <p class="legenda">Todos os animais atendidos pela clinica.</p>
+        </div>
+        <a class="botao botao-principal" th:href="@{/portal/pets/novo}">Cadastrar pet</a>
+    </div>
+
+    <div th:replace="~{layout :: aviso}"></div>
+
+    <div class="quadro">
+        <table>
+            <thead>
+            <tr>
+                <th>#</th>
+                <th>Nome</th>
+                <th>Especie</th>
+                <th>Raca</th>
+                <th>Nascimento</th>
+                <th>Sexo</th>
+                <th>Tutor</th>
+                <th>Acoes</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="p : ${pets}">
+                <td th:text="${p.idPet}">1</td>
+                <td th:text="${p.nome}">Nome</td>
+                <td th:text="${p.especie}">Especie</td>
+                <td th:text="${p.raca} ?: '-'">Raca</td>
+                <td th:text="${#temporals.format(p.dataNascimento, 'dd/MM/yyyy')}">--</td>
+                <td th:text="${p.sexo}">M</td>
+                <td th:text="${p.tutor.nome}">Tutor</td>
+                <td>
+                    <div class="acoes">
+                        <a class="botao botao-secundario"
+                           th:href="@{/portal/pets/{id}/editar(id=${p.idPet})}">Editar</a>
+                        <form th:action="@{/portal/pets/{id}/excluir(id=${p.idPet})}" method="post"
+                              onsubmit="return confirm('Excluir este pet? A acao nao pode ser desfeita.');">
+                            <button type="submit" class="botao botao-perigo">Excluir</button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(pets)}">
+                <td colspan="8" class="vazio">Nenhum pet cadastrado ainda.</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</main>
+
+</body>
+</html>

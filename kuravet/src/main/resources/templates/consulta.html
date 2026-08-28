@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout :: cabeca('Consulta')}"></head>
+<body>
+
+<header th:replace="~{layout :: topo('consultas')}"></header>
+
+<main>
+    <h1>
+        Consulta #<span th:text="${consulta.idConsulta}">1</span>
+        <span class="selo" th:classappend="'selo-' + ${consulta.status}" th:text="${consulta.status}">STATUS</span>
+    </h1>
+    <p class="legenda" th:text="${consulta.tipoConsulta}">Tipo</p>
+
+    <div th:replace="~{layout :: aviso}"></div>
+
+    <div class="quadro" style="padding:24px; margin-bottom:24px">
+        <dl class="dados">
+            <div>
+                <dt>Pet</dt>
+                <dd th:text="${consulta.pet.nome} + ' (' + ${consulta.pet.especie} + ')'">Pet</dd>
+            </div>
+            <div>
+                <dt>Tutor</dt>
+                <dd th:text="${consulta.pet.tutor.nome}">Tutor</dd>
+            </div>
+            <div>
+                <dt>Veterinario</dt>
+                <dd th:text="${consulta.veterinario.nome}">Vet</dd>
+            </div>
+            <div>
+                <dt>Solicitada em</dt>
+                <dd th:text="${#temporals.format(consulta.dataSolicitacao, 'dd/MM/yyyy')}">--</dd>
+            </div>
+            <div>
+                <dt>Data do atendimento</dt>
+                <dd th:text="${#temporals.format(consulta.dataConsulta, 'dd/MM/yyyy')}">--</dd>
+            </div>
+        </dl>
+    </div>
+
+    <!-- Fluxo 1: pendente de decisao -->
+    <div th:if="${consulta.status.name() == 'SOLICITADA'}">
+        <h2>Decisao</h2>
+        <div class="quadro" style="padding:24px">
+            <p style="margin-top:0">Esta solicitacao ainda aguarda sua aprovacao.</p>
+            <div class="acoes">
+                <form th:action="@{/portal/solicitacoes/{id}/aprovar(id=${consulta.idConsulta})}" method="post">
+                    <button type="submit" class="botao botao-principal">Aprovar e agendar</button>
+                </form>
+                <a class="botao botao-perigo"
+                   th:href="@{/portal/solicitacoes/{id}/recusar(id=${consulta.idConsulta})}">Recusar</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Fluxo 2: pronta para receber diagnostico -->
+    <div th:if="${consulta.status.name() == 'AGENDADA'}">
+        <h2>Encerrar atendimento</h2>
+        <form class="formulario"
+              th:action="@{/portal/consultas/{id}/diagnostico(id=${consulta.idConsulta})}"
+              th:object="${diagnosticoForm}" method="post">
+
+            <label for="diagnostico">Diagnostico</label>
+            <textarea id="diagnostico" th:field="*{diagnostico}"
+                      th:classappend="${#fields.hasErrors('diagnostico')} ? 'campo-invalido'"
+                      placeholder="Registre o quadro observado, a conduta e o retorno recomendado."></textarea>
+
+            <p class="erro-campo" th:if="${#fields.hasErrors('diagnostico')}" th:errors="*{diagnostico}"></p>
+            <p class="ajuda" th:unless="${#fields.hasErrors('diagnostico')}">
+                Entre 15 e 400 caracteres. Ao salvar, a consulta passa a REALIZADA e nao pode mais ser alterada.
+            </p>
+
+            <div class="rodape-form">
+                <button type="submit" class="botao botao-principal">Registrar e encerrar</button>
+                <a class="botao botao-secundario" th:href="@{/portal/consultas}">Voltar</a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Estados terminais -->
+    <div th:if="${consulta.status.name() == 'REALIZADA'}">
+        <h2>Diagnostico emitido</h2>
+        <div class="quadro" style="padding:24px">
+            <p style="margin:0" th:text="${consulta.diagnostico}">Diagnostico</p>
+        </div>
+    </div>
+
+    <div th:if="${consulta.status.name() == 'RECUSADA'}">
+        <h2>Motivo da recusa</h2>
+        <div class="quadro" style="padding:24px">
+            <p style="margin:0" th:text="${consulta.motivoRecusa}">Motivo</p>
+        </div>
+    </div>
+</main>
+
+</body>
+</html>

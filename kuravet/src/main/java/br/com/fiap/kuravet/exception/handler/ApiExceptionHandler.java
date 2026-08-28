@@ -20,7 +20,7 @@ import java.util.Map;
  * app mobile. Garante que erros de negocio e de validacao virem JSON
  * previsivel com o status HTTP correto, em vez do 500 padrao do Spring.
  */
-@RestControllerAdvice
+@RestControllerAdvice(basePackages = "br.com.fiap.kuravet.controller.api")
 public class ApiExceptionHandler {
 
     @ExceptionHandler({

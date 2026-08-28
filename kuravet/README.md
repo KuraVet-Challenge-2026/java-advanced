@@ -1,359 +1,391 @@
 # 🐾 KuraVet
 
-Plataforma de saúde preventiva contínua para pets. Backend em **Spring Boot** que expõe:
+Backend da plataforma de teleconsulta veterinária **KuraVet**, desenvolvido em **Spring Boot** para o Challenge FIAP.
 
-- um **portal web** (Thymeleaf + Spring Security), em `/portal/**`, restrito ao perfil VETERINARIO;
-- uma **API REST** (`/api/**`) consumida por um app mobile (React Native), autenticada via HTTP Basic
-  contra a tabela `USUARIO` — um TUTOR só enxerga e altera os próprios pets e consultas.
+A aplicação atende dois públicos a partir do mesmo núcleo de regras de negócio:
 
-Projeto acadêmico (FIAP) que utiliza banco de dados **Oracle** em nuvem, com controle de schema via **Flyway**.
+- **Portal web da clínica** (`/portal/**`) — camada de visualização em **Thymeleaf**, restrita ao perfil `VETERINARIO`. É onde o veterinário aprova ou recusa solicitações de teleconsulta, emite diagnósticos e gerencia o cadastro de pets.
+- **API REST** (`/api/**`) — consumida pelo aplicativo mobile do tutor (React Native), autenticada via HTTP Basic. Um `TUTOR` só enxerga e altera os próprios pets e consultas.
+  Nenhuma regra de negócio é duplicada entre os dois canais: ambos chamam os mesmos *services*.
 
 ---
 
 ## Sumário
 
 - [Stack utilizada](#stack-utilizada)
+- [Fluxos de negócio](#fluxos-de-negócio)
 - [Pré-requisitos](#pré-requisitos)
 - [Configuração](#configuração)
 - [Instalação e execução](#instalação-e-execução)
 - [Migrações do banco (Flyway)](#migrações-do-banco-flyway)
-- [Acesso à aplicação](#acesso-à-aplicação)
-  - [Portal web](#portal-web-thymeleaf)
-  - [API REST](#api-rest)
-- [Tratamento de erros da API](#tratamento-de-erros-da-api)
+- [Segurança e perfis de acesso](#segurança-e-perfis-de-acesso)
+- [Portal web](#portal-web)
+- [API REST](#api-rest)
+- [Tratamento de erros](#tratamento-de-erros)
 - [Estrutura do projeto](#estrutura-do-projeto)
 - [Problemas comuns](#problemas-comuns)
-
 ---
 
 ## Stack utilizada
 
-| Camada          | Tecnologia                                   |
-|-----------------|-----------------------------------------------|
-| Linguagem       | Java 21                                       |
-| Framework       | Spring Boot 4.1.0                             |
-| Persistência    | Spring Data JPA + Hibernate                   |
-| Banco de dados  | Oracle Database (driver `ojdbc11`)            |
-| Migrações       | Flyway (`flyway-database-oracle`)             |
-| Views           | Thymeleaf                                     |
-| Segurança       | Spring Security (form login + API stateless)  |
-| Build           | Maven (via `mvnw`)                            |
-| Utilitários     | Lombok, Bean Validation (Jakarta Validation)  |
+| Camada         | Tecnologia                                        |
+|----------------|---------------------------------------------------|
+| Linguagem      | Java 21                                           |
+| Framework      | Spring Boot 4.1.0                                 |
+| Visualização   | Thymeleaf + thymeleaf-extras-springsecurity6      |
+| Persistência   | Spring Data JPA + Hibernate                       |
+| Banco de dados | Oracle Database (driver `ojdbc11`)                |
+| Migrações      | Flyway (`flyway-database-oracle`)                 |
+| Segurança      | Spring Security (form login + HTTP Basic stateless) |
+| Validação      | Jakarta Bean Validation                           |
+| Build          | Maven (via Maven Wrapper)                         |
+| Utilitários    | Lombok                                            |
+ 
+---
 
+## Fluxos de negócio
+
+A aplicação implementa dois fluxos funcionais completos, além do CRUD de apoio. Ambos vivem em `ConsultaService`, que é o **único ponto do sistema autorizado a alterar o status de uma consulta**.
+
+### Máquina de estados da consulta
+
+```
+SOLICITADA ──aprovar──▶ AGENDADA ──diagnóstico──▶ REALIZADA
+     │                      │
+   recusar               cancelar
+     ▼                      ▼
+  RECUSADA              CANCELADA
+```
+
+`REALIZADA`, `RECUSADA` e `CANCELADA` são estados terminais. Qualquer transição fora deste mapa é rejeitada com `400 Bad Request` e a mensagem `Transicao de status invalida: X -> Y`.
+
+### Fluxo 1 — Aprovação de teleconsulta
+
+1. O tutor solicita a teleconsulta pelo app (`POST /api/consultas/solicitacoes`). A consulta nasce como `SOLICITADA`.
+2. Regras aplicadas na solicitação: o pet precisa pertencer ao tutor autenticado, o veterinário precisa existir, a data precisa ser futura, e o pet não pode ter outra consulta ativa na mesma data.
+3. O veterinário vê o pedido na fila do portal (`/portal/solicitacoes`) e decide:
+    - **Aprovar** → `AGENDADA`;
+    - **Recusar** → `RECUSADA`, com justificativa obrigatória entre 10 e 300 caracteres, visível ao tutor.
+### Fluxo 2 — Realização e emissão de diagnóstico
+
+O veterinário abre uma consulta `AGENDADA` no portal e registra o diagnóstico (entre 15 e 400 caracteres). A consulta passa a `REALIZADA` e não pode mais ser alterada. Uma consulta ainda `SOLICITADA` ou já `RECUSADA` nunca vira atendimento.
+
+### Regras espelhadas no schema
+
+As regras não vivem apenas no Java. O banco garante as mesmas invariantes por *CHECK constraints*, de modo que nem um `INSERT` manual pelo SQL Developer consegue violá-las:
+
+| Constraint | Garante |
+|---|---|
+| `KV_CK_CONS_STATUS` | status ∈ {SOLICITADA, AGENDADA, REALIZADA, CANCELADA, RECUSADA} |
+| `KV_CK_CONS_DIAGNOSTICO` | diagnóstico existe **se e somente se** o status é `REALIZADA` |
+| `KV_CK_CONS_MOTIVO` | motivo de recusa existe **se e somente se** o status é `RECUSADA` |
+| `KV_CK_USU_PERFIL` | perfil ∈ {TUTOR, VETERINARIO} |
+| `KV_CK_USU_TUTOR` | `ID_TUTOR` é obrigatório quando o perfil é TUTOR e proibido quando é VETERINARIO |
+| `KV_CK_PET_SEXO` | sexo ∈ {M, F} |
+ 
 ---
 
 ## Pré-requisitos
 
-- **JDK 21** ou superior instalado e configurado no `PATH` (`java -version`).
-- Não é necessário instalar o Maven — o projeto já inclui o Maven Wrapper (`mvnw` / `mvnw.cmd`).
-- Acesso de rede ao banco Oracle da instituição (`oracle.fiap.com.br:1521`), incluindo estar na rede/VPN da FIAP quando exigido.
-- Credenciais de um schema Oracle válido (usuário/senha fornecidos pela FIAP).
-- IDE recomendada: IntelliJ IDEA (o projeto já foi testado nela), mas qualquer IDE com suporte a Maven funciona.
-
+- **JDK 21** ou superior no `PATH` (`java -version`).
+- Maven **não** precisa ser instalado — o projeto inclui o Maven Wrapper (`mvnw` / `mvnw.cmd`).
+- Acesso de rede ao Oracle da instituição (`oracle.fiap.com.br:1521`), incluindo VPN quando exigido.
+- Credenciais de um schema Oracle válido.
 ---
 
 ## Configuração
 
-As configurações da aplicação ficam em:
-
-```
-src/main/resources/application.properties
-```
-
-Principais propriedades:
+As credenciais **não são versionadas**. O arquivo `src/main/resources/application.properties` traz apenas placeholders e importa, se existir, um arquivo local fora do controle de versão:
 
 ```properties
-spring.application.name=kuravet
-
-# Datasource Oracle FIAP
-spring.datasource.url=jdbc:oracle:thin:@oracle.fiap.com.br:1521:ORCL
-spring.datasource.username=SEU_USUARIO
-spring.datasource.password=SUA_SENHA
-spring.datasource.driver-class-name=oracle.jdbc.OracleDriver
-
-# Flyway
-spring.flyway.enabled=true
-spring.flyway.locations=classpath:db/migration
-spring.flyway.baseline-on-migrate=true
-spring.flyway.baseline-version=0
-
-# Thymeleaf
-spring.thymeleaf.cache=false
-
-# Schema é propriedade do Flyway; Hibernate só valida contra ele
-spring.jpa.hibernate.ddl-auto=validate
+spring.config.import=optional:classpath:application-local.properties
+ 
+spring.datasource.url=${DB_URL:jdbc:oracle:thin:@oracle.fiap.com.br:1521:ORCL}
+spring.datasource.username=${DB_USERNAME:}
+spring.datasource.password=${DB_PASSWORD:}
 ```
 
-> ⚠️ **Antes de rodar**, substitua `spring.datasource.username` e `spring.datasource.password` pelas suas credenciais do banco Oracle da FIAP. Evite commitar credenciais reais em repositórios públicos — prefira variáveis de ambiente ou um `application-local.properties` fora do controle de versão quando possível.
->
-> ⚠️ O arquivo deve estar salvo em **UTF-8**. Se o editor salvar em outra codificação (ex.: ISO-8859-1), o Maven falha ao copiar o arquivo para `target/classes` durante o build (`MalformedInputException`), e a aplicação sobe com as propriedades vazias.
+Crie `src/main/resources/application-local.properties` com as suas credenciais:
 
-Se preferir sobrescrever a URL/usuário/senha sem editar o arquivo, é possível passar via variáveis de ambiente ou argumentos de linha de comando, por exemplo:
+```properties
+spring.datasource.username=SEU_RM
+spring.datasource.password=SUA_SENHA
+```
+
+Esse arquivo está no `.gitignore` e nunca vai para o repositório.
+
+Alternativamente, defina as variáveis de ambiente `DB_USERNAME` e `DB_PASSWORD`, ou passe por linha de comando:
 
 ```bash
-./mvnw spring-boot:run -Dspring-boot.run.arguments="--spring.datasource.username=SEU_USUARIO --spring.datasource.password=SUA_SENHA"
+./mvnw spring-boot:run -Dspring-boot.run.arguments="--spring.datasource.username=SEU_RM --spring.datasource.password=SUA_SENHA"
 ```
 
+> ⚠️ O `application.properties` deve estar salvo em **UTF-8**. Em outra codificação, o Maven falha ao copiar o arquivo para `target/classes` (`MalformedInputException`) e a aplicação sobe com as propriedades vazias.
+ 
 ---
 
 ## Instalação e execução
 
-Clone o repositório e entre na pasta do módulo Spring Boot:
-
 ```bash
-git clone <url-do-repositorio>
+git clone https://github.com/KuraVet-Challenge-2026/java-advanced.git
 cd java-advanced/kuravet
 ```
 
-### Opção 1 — Maven Wrapper (linha de comando)
+### Linha de comando
 
-**Windows (PowerShell / cmd):**
+**Windows (PowerShell):**
 ```powershell
-.\mvnw.cmd clean install
-.\mvnw.cmd spring-boot:run
+.\mvnw.cmd clean spring-boot:run
 ```
 
-**Linux / macOS / Git Bash:**
+**Linux / macOS:**
 ```bash
-./mvnw clean install
-./mvnw spring-boot:run
+./mvnw clean spring-boot:run
 ```
 
-### Opção 2 — Pela IDE (IntelliJ IDEA)
+### Pela IDE
 
-1. Abra a pasta `kuravet` como projeto Maven (o IntelliJ importa o `pom.xml` automaticamente).
-2. Configure as credenciais do banco em `application.properties` (veja [Configuração](#configuração)).
-3. Rode a classe principal `br.com.fiap.kuravet.KuravetApplication` (botão ▶️ ao lado do `main`).
+Abra a pasta **`kuravet`** (a que contém o `pom.xml`) como projeto Maven — não a pasta raiz do repositório. Configure as credenciais e execute `br.com.fiap.kuravet.KuravetApplication`.
 
-Ao subir com sucesso, o log deve mostrar algo como:
+Ao subir com sucesso:
 
 ```
+Successfully applied N migrations
 Tomcat initialized with port 8080 (http)
-...
 Started KuravetApplication in X seconds
 ```
 
-A aplicação fica disponível em **http://localhost:8080**.
-
-> O projeto usa **Spring Boot DevTools**, então alterações no código-fonte reiniciam a aplicação automaticamente durante o desenvolvimento.
-
+A aplicação fica em **http://localhost:8080**.
+ 
 ---
 
 ## Migrações do banco (Flyway)
 
-O schema é criado e versionado automaticamente pelo Flyway ao iniciar a aplicação, a partir dos scripts em:
+O schema é criado e versionado automaticamente na inicialização, a partir de `src/main/resources/db/migration/`:
 
-```
-src/main/resources/db/migration/
-├── V1__schema.sql                        # DDL: tutor, veterinario, pet, consulta, usuario
-├── V2__seed_perfis_e_veterinario.sql      # veterinários + usuário de perfil VETERINARIO
-└── V3__seed_tutor_inicial.sql             # tutor inicial + usuário de perfil TUTOR
-```
+| Script | Conteúdo |
+|---|---|
+| `V1__schema.sql` | DDL das tabelas TUTOR, VETERINARIO, PET, CONSULTA, USUARIO, sequences e constraints |
+| `V2__seed_perfis_e_veterinario.sql` | 10 veterinários e o usuário de perfil VETERINARIO |
+| `V3__seed_tutor_inicial.sql` | Tutor inicial e seu usuário de perfil TUTOR |
+| `V4__consulta_teleconsulta.sql` | Amplia a máquina de estados: status `SOLICITADA` e `RECUSADA`, colunas `DATA_SOLICITACAO` e `MOTIVO_RECUSA`, novas CHECK constraints |
+| `V5__seed_pets_e_consultas.sql` | Pets e consultas cobrindo todos os estados do fluxo |
 
-Não é necessário rodar nenhum script manualmente — basta iniciar a aplicação com um schema Oracle válido e vazio (ou já controlado pelo Flyway) que as tabelas e os dados iniciais são criados na primeira execução. O schema é propriedade do Flyway: `spring.jpa.hibernate.ddl-auto=validate` faz o Hibernate só conferir se as entidades batem com o que o Flyway criou, nunca alterar o schema.
+Nenhum script precisa ser executado à mão: basta iniciar a aplicação apontando para um schema Oracle válido.
 
-> ⚠️ Se o seu schema Oracle já tinha as migrations antigas (`V1__Criar_Tabelas_Core.sql` e demais) aplicadas, o histórico do Flyway (`flyway_schema_history`) não bate mais com este novo conjunto V1–V3. Antes de rodar a aplicação, resete o schema — veja [Problemas comuns](#problemas-comuns).
+O Hibernate roda com `spring.jpa.hibernate.ddl-auto=validate` — o schema é propriedade do Flyway, e o Hibernate apenas confere se as entidades batem com o que foi criado.
 
-O arquivo `script_bd.sql`, na raiz do módulo, é um script SQL independente (procedures, function, trigger de auditoria, tabela de pagamentos) para execução manual em um cliente Oracle (ex. SQL Developer); não faz parte do schema gerenciado pelo Flyway nem é usado pela aplicação Spring.
+### Regra de ouro
 
+**Nunca edite uma migration já aplicada.** O Flyway compara o checksum do arquivo com o que foi executado e se recusa a continuar se houver diferença. Precisa mudar algo? Crie um `V6__`, `V7__` e assim por diante.
+
+A aplicação registra um `FlywayMigrationStrategy` que executa `repair()` antes de `migrate()`, de modo que um registro de migration interrompida não impede a inicialização seguinte.
+
+### Script SQL independente
+
+O arquivo `script_bd.sql`, na raiz do módulo, contém procedures, functions e a trigger de auditoria da disciplina de banco de dados. Ele é executado manualmente em um cliente Oracle e **não** faz parte do schema gerenciado pelo Flyway.
+ 
 ---
 
-## Acesso à aplicação
+## Segurança e perfis de acesso
 
-### Portal web (Thymeleaf)
+Duas cadeias de filtros isoladas, declaradas em `SecurityConfig`:
 
-| Rota             | Descrição                | Acesso                      |
-|------------------|---------------------------|-------------------------------|
-| `/login`         | Tela de login              | Público                       |
-| `/portal/painel` | Painel autenticado          | Requer login, perfil VETERINARIO |
+| Cadeia | Rotas | Autenticação | Sessão | CSRF |
+|---|---|---|---|---|
+| API mobile | `/api/**` | HTTP Basic | Stateless | Desabilitado |
+| Portal web | demais rotas | Form login | Sessão HTTP | Habilitado |
 
-Usuário de teste (persistido via migration `V2__seed_perfis_e_veterinario.sql`):
+A autenticação consulta a tabela `USUARIO` através de `UsuarioDetailsService`, com senhas em **BCrypt**. A autorização por rota e método fica no `SecurityConfig`; a autorização **por dono** — um tutor só acessa os próprios registros — depende dos dados e por isso vive na camada de service.
 
-| Usuário       | Senha       | Perfil        |
-|---------------|-------------|----------------|
-| `veterinario` | `vet123`    | `VETERINARIO`  |
+Um pet ou consulta de outro tutor retorna `404`, não `403`, para não revelar a existência de registros de terceiros.
 
-### API REST
+### Usuários de teste
 
-Base URL: `http://localhost:8080/api`
+| Usuário | Senha | Perfil | Acesso |
+|---|---|---|---|
+| `veterinario` | `vet123` | VETERINARIO | Portal web e API |
+| `tutor` | `tutor123` | TUTOR | Apenas API (app mobile) |
+ 
+---
 
-As rotas `/api/**` exigem autenticação **HTTP Basic** contra a tabela `USUARIO`, exceto `/api/ping`.
-Um usuário TUTOR só enxerga e altera os próprios pets e consultas; um VETERINARIO tem acesso irrestrito
-e é o único que pode emitir diagnóstico. Cadastro/edição/exclusão de pet é exclusivo de TUTOR — o dono
-é sempre o usuário autenticado, nunca um `idTutor` enviado no corpo da requisição.
+## Portal web
 
-Usuário de teste (persistido via migration `V3__seed_tutor_inicial.sql`):
+Interface Thymeleaf da clínica. Todas as rotas sob `/portal/**` exigem perfil `VETERINARIO`.
 
-| Usuário  | Senha       | Perfil    |
-|----------|-------------|------------|
-| `tutor`  | `tutor123`  | `TUTOR`    |
+| Rota | Descrição |
+|---|---|
+| `GET /login` | Tela de login (pública) |
+| `GET /portal/painel` | Indicadores por status e resumo do fluxo |
+| `GET /portal/solicitacoes` | Fila de teleconsultas aguardando decisão |
+| `POST /portal/solicitacoes/{id}/aprovar` | Aprova a solicitação |
+| `GET/POST /portal/solicitacoes/{id}/recusar` | Formulário e gravação da recusa |
+| `GET /portal/consultas` | Histórico completo, filtrável por status |
+| `GET /portal/consultas/{id}` | Detalhe da consulta |
+| `POST /portal/consultas/{id}/diagnostico` | Emite o diagnóstico e encerra |
+| `GET /portal/pets` | Lista de pets |
+| `GET/POST /portal/pets/novo` | Cadastro de pet |
+| `GET/POST /portal/pets/{id}/editar` | Edição de pet |
+| `POST /portal/pets/{id}/excluir` | Exclusão de pet |
 
-| Método   | Rota                                | Acesso                    | Descrição                              |
-|----------|--------------------------------------|-----------------------------|------------------------------------------|
-| `GET`    | `/api/ping`                          | Público                    | Health-check simples (retorna `"pong"`)   |
-| `GET`    | `/api/pets`                          | Autenticado                | Lista pets (TUTOR: só os próprios)        |
-| `GET`    | `/api/pets/{id}`                     | Autenticado                | Busca um pet pelo ID                       |
-| `POST`   | `/api/pets`                          | TUTOR                      | Cadastra um pet para o tutor autenticado   |
-| `PUT`    | `/api/pets/{id}`                     | TUTOR                      | Atualiza um pet próprio                    |
-| `DELETE` | `/api/pets/{id}`                     | TUTOR                      | Exclui um pet próprio                      |
-| `GET`    | `/api/tutores`, `/api/tutores/{id}`  | Autenticado                | Lista/busca tutores                        |
-| `POST`, `PUT`, `DELETE` | `/api/tutores/**`      | Autenticado                | CRUD de tutores                            |
-| `GET`    | `/api/consultas`                     | Autenticado                | Lista consultas (TUTOR: só as próprias)    |
-| `GET`    | `/api/consultas/{id}`                | Autenticado                | Busca uma consulta pelo ID                 |
-| `POST`   | `/api/consultas`                     | Autenticado                | Agenda uma consulta (status inicial `AGENDADA`) |
-| `PUT`    | `/api/consultas/{id}`                | Autenticado                | Atualiza pet/veterinário/data/tipo         |
-| `DELETE` | `/api/consultas/{id}`                | Autenticado                | Exclui uma consulta                        |
-| `PATCH`  | `/api/consultas/{id}/diagnostico`    | VETERINARIO                 | Encerra a consulta emitindo o diagnóstico  |
+Os formulários usam `@Valid` com `BindingResult`: quando a validação falha, a página é reexibida com a mensagem sob o campo e o restante do formulário preenchido. O token CSRF é injetado automaticamente pelo Thymeleaf em todo `<form th:action>` com `method="post"`.
+ 
+---
 
-#### Exemplo — cadastrar pet
+## API REST
+
+Base: `http://localhost:8080/api`. Todas as rotas exigem HTTP Basic, exceto `/api/ping`.
+
+| Método | Rota | Perfil | Descrição |
+|---|---|---|---|
+| `GET` | `/api/ping` | público | Health-check (retorna `pong`) |
+| `GET` | `/api/pets` | autenticado | Lista pets (TUTOR: só os próprios) |
+| `GET` | `/api/pets/{id}` | autenticado | Busca pet por ID |
+| `POST` | `/api/pets` | TUTOR | Cadastra pet para o tutor autenticado |
+| `PUT` | `/api/pets/{id}` | TUTOR | Atualiza pet próprio |
+| `DELETE` | `/api/pets/{id}` | TUTOR | Exclui pet próprio (bloqueado se houver consultas) |
+| `GET` | `/api/tutores`, `/api/tutores/{id}` | autenticado | Lista e busca tutores |
+| `POST`/`PUT`/`DELETE` | `/api/tutores/**` | autenticado | CRUD de tutores |
+| `GET` | `/api/consultas?status=` | autenticado | Lista consultas, opcionalmente por status |
+| `GET` | `/api/consultas/{id}` | autenticado | Busca consulta por ID |
+| `POST` | `/api/consultas/solicitacoes` | TUTOR | Solicita teleconsulta |
+| `PATCH` | `/api/consultas/{id}/aprovacao` | VETERINARIO | Aprova a solicitação |
+| `PATCH` | `/api/consultas/{id}/recusa` | VETERINARIO | Recusa com justificativa |
+| `PATCH` | `/api/consultas/{id}/diagnostico` | VETERINARIO | Emite diagnóstico e encerra |
+| `PATCH` | `/api/consultas/{id}/cancelamento` | autenticado | Cancela consulta agendada |
+| `PUT` | `/api/consultas/{id}` | autenticado | Atualiza pet, veterinário, data ou tipo |
+| `DELETE` | `/api/consultas/{id}` | autenticado | Exclui consulta |
+
+### Exemplo — solicitar teleconsulta
 
 ```http
-POST /api/pets
+POST /api/consultas/solicitacoes
 Authorization: Basic dHV0b3I6dHV0b3IxMjM=
 Content-Type: application/json
-
+ 
 {
-  "nome": "Thor",
-  "especie": "Cachorro",
-  "raca": "Labrador",
-  "dataNascimento": "2022-03-15",
-  "sexo": "M"
+  "idPet": 1,
+  "idVeterinario": 2,
+  "dataConsulta": "2026-10-01",
+  "tipoConsulta": "Teleconsulta - Dermatologia"
 }
 ```
 
-Resposta (`201 Created`):
+Resposta `201 Created`:
 
 ```json
 {
-  "idPet": 11,
-  "nome": "Thor",
-  "especie": "Cachorro",
-  "raca": "Labrador",
-  "dataNascimento": "2022-03-15",
-  "sexo": "M",
-  "idTutor": 1,
-  "nomeTutor": "Ana Beatriz Souza"
-}
-```
-
-#### Exemplo — emitir diagnóstico de uma consulta
-
-```http
-PATCH /api/consultas/1/diagnostico
-Content-Type: application/json
-
-{
-  "diagnostico": "Animal saudável, vacinação em dia"
-}
-```
-
-Resposta (`200 OK`):
-
-```json
-{
-  "idConsulta": 1,
+  "idConsulta": 12,
   "idPet": 1,
   "nomePet": "Thor",
-  "idVeterinario": 1,
-  "nomeVeterinario": "Dra. Patricia Gomes",
-  "dataConsulta": "2025-01-10",
-  "tipoConsulta": "Checkup",
-  "diagnostico": "Animal saudável, vacinação em dia",
-  "status": "REALIZADA"
+  "idVeterinario": 2,
+  "nomeVeterinario": "Dr. Rafael Andrade",
+  "dataSolicitacao": "2026-08-27",
+  "dataConsulta": "2026-10-01",
+  "tipoConsulta": "Teleconsulta - Dermatologia",
+  "diagnostico": null,
+  "motivoRecusa": null,
+  "status": "SOLICITADA"
 }
 ```
 
+### Exemplo — recusar solicitação
+
+```http
+PATCH /api/consultas/12/recusa
+Authorization: Basic dmV0ZXJpbmFyaW86dmV0MTIz
+Content-Type: application/json
+ 
+{
+  "motivo": "Caso ortopedico exige exame presencial com raio-x."
+}
+```
+ 
 ---
 
-## Tratamento de erros da API
+## Tratamento de erros
 
-Erros de negócio, recursos não encontrados e falhas de validação retornam JSON padronizado em vez do erro 500 genérico do Spring:
+Há dois `ControllerAdvice` com escopos distintos, para que cada canal receba a resposta no formato certo:
+
+- `ApiExceptionHandler` (`@RestControllerAdvice` limitado ao pacote `controller.api`) → JSON padronizado;
+- `PortalExceptionHandler` (`@ControllerAdvice` limitado a `controller.web`) → página HTML de erro.
+  Erro de negócio ou recurso inexistente na API:
 
 ```json
 {
-  "timestamp": "2026-08-13T21:10:00",
+  "timestamp": "2026-08-27T21:10:00",
   "status": 404,
   "erro": "Not Found",
   "mensagem": "Pet com ID 999 não encontrado."
 }
 ```
 
-Erros de validação (`400 Bad Request`) incluem também o detalhe por campo:
+Erro de validação inclui o detalhe por campo:
 
 ```json
 {
-  "timestamp": "2026-08-13T21:10:00",
+  "timestamp": "2026-08-27T21:10:00",
   "status": 400,
   "erro": "Bad Request",
   "mensagem": "Erro de validação nos campos informados.",
   "campos": {
-    "nome": "O nome do pet é obrigatório."
+    "dataConsulta": "A data desejada precisa ser futura."
   }
 }
 ```
-
+ 
 ---
 
 ## Estrutura do projeto
 
 ```
 kuravet/
-├── mvnw, mvnw.cmd              # Maven Wrapper
-├── pom.xml                     # Dependências e build
-├── script_bd.sql                # Script SQL manual (equivalente às migrations)
+├── pom.xml
+├── script_bd.sql                    # Script SQL manual (disciplina de banco)
 └── src/main/
     ├── java/br/com/fiap/kuravet/
     │   ├── KuravetApplication.java
-    │   ├── config/                # SecurityConfig, CorsConfig
-    │   ├── controller/            # controller/api (REST) e controller/web (Thymeleaf)
-    │   ├── dto/                   # Records de entrada/saída da API, por domínio (dto/pet, dto/tutor, dto/consulta)
-    │   ├── exception/              # Exceções de negócio + handler global (exception/handler)
-    │   ├── model/                  # Entidades JPA (Tutor, Pet, Veterinario, Consulta, Usuario...)
-    │   ├── repository/             # Spring Data JPA repositories
-    │   ├── security/                # UsuarioPrincipal, UsuarioDetailsService (autenticação via USUARIO)
-    │   └── service/                 # Regras de negócio (ex.: ConsultaService)
+    │   ├── config/                  # SecurityConfig, CorsConfig, FlywayConfig
+    │   ├── controller/
+    │   │   ├── api/                 # Endpoints REST do app mobile
+    │   │   └── web/                 # Controllers do portal Thymeleaf
+    │   │       └── form/            # Objetos de vínculo dos formulários
+    │   ├── dto/                     # Records de entrada e saída da API
+    │   ├── enums/                   # Perfil, StatusConsulta
+    │   ├── exception/               # Exceções de negócio
+    │   │   └── handler/             # Tratamento global por canal
+    │   ├── model/                   # Entidades JPA
+    │   ├── repository/              # Spring Data JPA
+    │   ├── security/                # UsuarioPrincipal, UsuarioDetailsService
+    │   └── service/                 # Regras de negócio
     └── resources/
         ├── application.properties
-        ├── db/migration/         # Scripts versionados do Flyway
-        └── templates/            # login.html, painel.html
+        ├── db/migration/            # Scripts versionados do Flyway
+        ├── static/css/              # Folha de estilo do portal
+        └── templates/               # Views Thymeleaf
 ```
-
+ 
 ---
 
 ## Problemas comuns
 
-- **`Failed to determine a suitable driver class`**: as credenciais/URL do banco em `application.properties` não foram carregadas corretamente — confira se o arquivo está salvo em UTF-8 e se `spring.datasource.*` está preenchido.
-- **`Found non-empty schema(s) ... but no schema history table`**: o schema Oracle já tem tabelas criadas fora do Flyway (ex.: via `script_bd.sql` manual). Garanta que `spring.flyway.baseline-on-migrate=true` esteja habilitado, ou limpe o schema antes de rodar a aplicação pela primeira vez.
-- **Timeout/erro de conexão com `oracle.fiap.com.br`**: verifique se você está conectado à rede/VPN da FIAP e se as credenciais do schema estão corretas.
-- **`Validate failed: Migrations have failed validation` / `Migration checksum mismatch`**: seu schema já tinha o conjunto antigo de migrations (`V1__Criar_Tabelas_Core.sql` e demais) aplicado antes da reorganização para `V1__schema.sql`/`V2__seed_perfis_e_veterinario.sql`/`V3__seed_tutor_inicial.sql`. Resete o schema antes de rodar a aplicação de novo — conecte no seu usuário Oracle (ex. via SQL Developer) e rode:
+**`ORA-12541: não há listener em host localhost port 1521`**
+A URL do datasource não foi carregada e caiu no padrão. Confirme que o `application-local.properties` existe e que o `application.properties` está em UTF-8.
 
-  ```sql
-  BEGIN EXECUTE IMMEDIATE 'DROP TABLE CONSULTA CASCADE CONSTRAINTS PURGE'; EXCEPTION WHEN OTHERS THEN NULL; END;
-  /
-  BEGIN EXECUTE IMMEDIATE 'DROP TABLE USUARIO CASCADE CONSTRAINTS PURGE'; EXCEPTION WHEN OTHERS THEN NULL; END;
-  /
-  BEGIN EXECUTE IMMEDIATE 'DROP TABLE PET CASCADE CONSTRAINTS PURGE'; EXCEPTION WHEN OTHERS THEN NULL; END;
-  /
-  BEGIN EXECUTE IMMEDIATE 'DROP TABLE VETERINARIO CASCADE CONSTRAINTS PURGE'; EXCEPTION WHEN OTHERS THEN NULL; END;
-  /
-  BEGIN EXECUTE IMMEDIATE 'DROP TABLE TUTOR CASCADE CONSTRAINTS PURGE'; EXCEPTION WHEN OTHERS THEN NULL; END;
-  /
-  BEGIN EXECUTE IMMEDIATE 'DROP TABLE FATO_PAGAMENTO CASCADE CONSTRAINTS PURGE'; EXCEPTION WHEN OTHERS THEN NULL; END;
-  /
-  BEGIN EXECUTE IMMEDIATE 'DROP TABLE AUDITORIA_LOG CASCADE CONSTRAINTS PURGE'; EXCEPTION WHEN OTHERS THEN NULL; END;
-  /
-  BEGIN EXECUTE IMMEDIATE 'DROP TRIGGER TRG_AUDITORIA_CONSULTA'; EXCEPTION WHEN OTHERS THEN NULL; END;
-  /
-  BEGIN EXECUTE IMMEDIATE 'DROP SEQUENCE SEQ_TUTOR'; EXCEPTION WHEN OTHERS THEN NULL; END;
-  /
-  BEGIN EXECUTE IMMEDIATE 'DROP SEQUENCE SEQ_VETERINARIO'; EXCEPTION WHEN OTHERS THEN NULL; END;
-  /
-  BEGIN EXECUTE IMMEDIATE 'DROP SEQUENCE SEQ_PET'; EXCEPTION WHEN OTHERS THEN NULL; END;
-  /
-  BEGIN EXECUTE IMMEDIATE 'DROP SEQUENCE SEQ_CONSULTA'; EXCEPTION WHEN OTHERS THEN NULL; END;
-  /
-  BEGIN EXECUTE IMMEDIATE 'DROP TABLE FLYWAY_SCHEMA_HISTORY CASCADE CONSTRAINTS PURGE'; EXCEPTION WHEN OTHERS THEN NULL; END;
-  /
-  ```
+**`ORA-01017: invalid username/password`**
+Credenciais incorretas em `application-local.properties`.
 
-  Depois disso, o próximo `spring-boot:run` recria tudo do zero a partir de `V1__schema.sql`.
+**`Migration checksum mismatch`**
+Uma migration já aplicada foi editada. Reverta o arquivo ou crie uma nova versão — nunca altere uma migration aplicada.
+
+**`Detected failed migration to version N`**
+Uma migration falhou pela metade e o registro ficou no histórico. O `FlywayConfig` resolve automaticamente na próxima inicialização; se persistir, remova a linha correspondente de `FLYWAY_SCHEMA_HISTORY` (atenção: as colunas dessa tabela são minúsculas e exigem aspas duplas no Oracle, ex. `WHERE "version" = 'N'`).
+
+**`Found non-empty schema(s) but no schema history table`**
+O schema tem tabelas criadas fora do Flyway. Mantenha `spring.flyway.baseline-on-migrate=true` ou limpe o schema antes da primeira execução.
+
+**Timeout ao conectar em `oracle.fiap.com.br`**
+Verifique a conexão com a rede/VPN da FIAP.
+
+**A IDE não reconhece o projeto / botão de execução ausente**
+Abra a pasta `kuravet` (a que contém o `pom.xml`), não a raiz do repositório.

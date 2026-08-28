@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<head th:fragment="cabeca(titulo)">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="'KuraVet - ' + ${titulo}">KuraVet</title>
+    <link rel="stylesheet" th:href="@{/css/kuravet.css}">
+</head>
+
+<body>
+
+<header class="topo" th:fragment="topo(pagina)">
+    <div class="topo-interno">
+        <a class="marca" th:href="@{/portal/painel}">KuraVet</a>
+        <nav class="menu">
+            <a th:href="@{/portal/painel}" th:classappend="${pagina == 'painel'} ? 'ativo'">Painel</a>
+            <a th:href="@{/portal/pets}" th:classappend="${pagina == 'pets'} ? 'ativo'">Pets</a>
+            <a th:href="@{/portal/solicitacoes}" th:classappend="${pagina == 'solicitacoes'} ? 'ativo'">Solicitacoes</a>
+            <a th:href="@{/portal/consultas}" th:classappend="${pagina == 'consultas'} ? 'ativo'">Consultas</a>
+        </nav>
+        <div class="usuario">
+            <span sec:authentication="name">usuario</span>
+            <form th:action="@{/logout}" method="post">
+                <button type="submit" class="botao botao-secundario">Sair</button>
+            </form>
+        </div>
+    </div>
+</header>
+
+<div th:fragment="aviso">
+    <p class="aviso aviso-sucesso" th:if="${sucesso}" th:text="${sucesso}"></p>
+</div>
+
+</body>
+</html>
