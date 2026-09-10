@@ -5,7 +5,7 @@ Backend da plataforma de teleconsulta veterinária **KuraVet**, desenvolvido em 
 A aplicação atende dois públicos a partir do mesmo núcleo de regras de negócio:
 
 - **Portal web da clínica** (`/portal/**`) — camada de visualização em **Thymeleaf**, restrita ao perfil `VETERINARIO`. É onde o veterinário aprova ou recusa solicitações de teleconsulta, emite diagnósticos e gerencia o cadastro de pets.
-- **API REST** (`/api/**`) — consumida pelo aplicativo mobile do tutor (React Native), autenticada via HTTP Basic. Um `TUTOR` só enxerga e altera os próprios pets e consultas.
+- **API REST** (`/api/**`) — consumida pelo aplicativo mobile do tutor (React Native), autenticada via HTTP Basic. Um `TUTOR` só enxerga e altera os próprios pets, consultas e o próprio cadastro de tutor.
   Nenhuma regra de negócio é duplicada entre os dois canais: ambos chamam os mesmos *services*.
 
 ---
@@ -156,6 +156,17 @@ Started KuravetApplication in X seconds
 ```
 
 A aplicação fica em **http://localhost:8080**.
+
+### Para o time do app mobile
+
+Para apontar o app para a API local, siga exatamente os passos de [Configuração](#configuração) e [Instalação e execução](#instalação-e-execução) acima (credenciais em `application-local.properties`, depois `./mvnw spring-boot:run` ou `.\mvnw.cmd spring-boot:run`). Nada de específico para mobile muda nisso — a API sobe do mesmo jeito para portal e app.
+
+Os três pontos que o app precisa (ver [API REST](#api-rest) para os contratos completos):
+
+- `POST /api/auth/cadastro` — autocadastro do tutor (público, sem HTTP Basic).
+- `GET /api/auth/me` — validar login e obter `perfil`/`idTutor` depois de autenticar com HTTP Basic.
+- `GET/POST/PUT/DELETE /api/tutores/**` — agora com ownership: um TUTOR só vê e altera o próprio registro (404 para qualquer outro ID).
+- `GET /api/veterinarios` — lista para popular a escolha de profissional em `POST /api/consultas/solicitacoes`.
  
 ---
 
@@ -198,7 +209,13 @@ Duas cadeias de filtros isoladas, declaradas em `SecurityConfig`:
 
 A autenticação consulta a tabela `USUARIO` através de `UsuarioDetailsService`, com senhas em **BCrypt**. A autorização por rota e método fica no `SecurityConfig`; a autorização **por dono** — um tutor só acessa os próprios registros — depende dos dados e por isso vive na camada de service.
 
-Um pet ou consulta de outro tutor retorna `404`, não `403`, para não revelar a existência de registros de terceiros.
+Um pet, consulta ou **tutor** de outro dono retorna `404`, não `403`, para não revelar a existência de registros de terceiros (`PetService`, `ConsultaService` e `TutorService` seguem o mesmo padrão: o dono vem sempre do `UsuarioPrincipal` autenticado, nunca do `id` da URL).
+
+Toda falha de autenticação em `/api/**` responde `401` puro (formato padrão do Spring Security, com header `WWW-Authenticate`) — a cadeia da API declara seu próprio `AuthenticationEntryPoint` e libera `/error` na cadeia do portal, para o forward interno do Tomcat em um `401`/`403` não cair no `formLogin()` e virar redirect para `/login`.
+
+### Cadastro público (app mobile)
+
+`POST /api/auth/cadastro` é a única rota de escrita liberada sem autenticação em `/api/**`. Ela sempre cria um usuário de perfil `TUTOR` — o papel nunca vem do corpo da requisição, é fixado no `AuthService`. Um tutor cadastrado por ali só enxerga e altera o próprio registro nas demais rotas de `/api/tutores/**`.
 
 ### Usuários de teste
 
@@ -206,6 +223,8 @@ Um pet ou consulta de outro tutor retorna `404`, não `403`, para não revelar a
 |---|---|---|---|
 | `veterinario` | `vet123` | VETERINARIO | Portal web e API |
 | `tutor` | `tutor123` | TUTOR | Apenas API (app mobile) |
+
+Novos tutores se cadastram via `POST /api/auth/cadastro` (ver [API REST](#api-rest)) em vez de receber usuário/senha por seed.
  
 ---
 
@@ -234,18 +253,22 @@ Os formulários usam `@Valid` com `BindingResult`: quando a validação falha, a
 
 ## API REST
 
-Base: `http://localhost:8080/api`. Todas as rotas exigem HTTP Basic, exceto `/api/ping`.
+Base: `http://localhost:8080/api`. Todas as rotas exigem HTTP Basic, exceto `/api/ping` e `POST /api/auth/cadastro`.
 
 | Método | Rota | Perfil | Descrição |
 |---|---|---|---|
 | `GET` | `/api/ping` | público | Health-check (retorna `pong`) |
+| `POST` | `/api/auth/cadastro` | público | Autocadastro: cria TUTOR + USUARIO (perfil sempre `TUTOR`) |
+| `GET` | `/api/auth/me` | autenticado | Perfil de quem está logado (valida a senha digitada no app) |
 | `GET` | `/api/pets` | autenticado | Lista pets (TUTOR: só os próprios) |
 | `GET` | `/api/pets/{id}` | autenticado | Busca pet por ID |
 | `POST` | `/api/pets` | TUTOR | Cadastra pet para o tutor autenticado |
 | `PUT` | `/api/pets/{id}` | TUTOR | Atualiza pet próprio |
 | `DELETE` | `/api/pets/{id}` | TUTOR | Exclui pet próprio (bloqueado se houver consultas) |
-| `GET` | `/api/tutores`, `/api/tutores/{id}` | autenticado | Lista e busca tutores |
-| `POST`/`PUT`/`DELETE` | `/api/tutores/**` | autenticado | CRUD de tutores |
+| `GET` | `/api/tutores`, `/api/tutores/{id}` | autenticado | Lista e busca tutores (TUTOR: só o próprio; VETERINARIO: todos) |
+| `POST` | `/api/tutores` | autenticado | Cadastro direto de tutor (sem login associado — uso administrativo; o app mobile usa `/api/auth/cadastro`) |
+| `PUT`/`DELETE` | `/api/tutores/{id}` | autenticado | Atualiza/exclui tutor (TUTOR: só o próprio; VETERINARIO: qualquer um) |
+| `GET` | `/api/veterinarios`, `/api/veterinarios/{id}` | autenticado | Lista e busca veterinários (somente leitura) |
 | `GET` | `/api/consultas?status=` | autenticado | Lista consultas, opcionalmente por status |
 | `GET` | `/api/consultas/{id}` | autenticado | Busca consulta por ID |
 | `POST` | `/api/consultas/solicitacoes` | TUTOR | Solicita teleconsulta |
@@ -255,6 +278,62 @@ Base: `http://localhost:8080/api`. Todas as rotas exigem HTTP Basic, exceto `/ap
 | `PATCH` | `/api/consultas/{id}/cancelamento` | autenticado | Cancela consulta agendada |
 | `PUT` | `/api/consultas/{id}` | autenticado | Atualiza pet, veterinário, data ou tipo |
 | `DELETE` | `/api/consultas/{id}` | autenticado | Exclui consulta |
+
+### Exemplo — autocadastro do tutor (app mobile)
+
+```http
+POST /api/auth/cadastro
+Content-Type: application/json
+
+{
+  "nome": "Carlos Eduardo Lima",
+  "cpf": "999.888.777-66",
+  "telefone": "(11) 90000-0001",
+  "email": "carlos.lima@email.com",
+  "endereco": "Rua Nova, 50",
+  "username": "carlos_novo",
+  "senha": "senha123"
+}
+```
+
+Resposta `201 Created` (senha nunca volta na resposta):
+
+```json
+{
+  "idTutor": 11,
+  "nome": "Carlos Eduardo Lima",
+  "cpf": "999.888.777-66",
+  "telefone": "(11) 90000-0001",
+  "email": "carlos.lima@email.com",
+  "endereco": "Rua Nova, 50",
+  "dataCadastro": "2026-09-03",
+  "username": "carlos_novo",
+  "perfil": "TUTOR"
+}
+```
+
+`400 Bad Request` se `username` ou `cpf` já existirem (`{"mensagem":"Nome de usuario ja em uso."}`) ou se os campos obrigatórios faltarem (formato `campos` padrão do `ApiExceptionHandler`).
+
+### Exemplo — validar login / obter o perfil autenticado
+
+```http
+GET /api/auth/me
+Authorization: Basic Y2FybG9zX25vdm86c2VuaGExMjM=
+```
+
+Resposta `200 OK`:
+
+```json
+{
+  "idUsuario": 100,
+  "username": "carlos_novo",
+  "perfil": "TUTOR",
+  "idTutor": 11,
+  "nomeTutor": "Carlos Eduardo Lima"
+}
+```
+
+`idTutor`/`nomeTutor` vêm `null` quando `perfil` é `VETERINARIO`. Credencial ausente ou inválida responde `401` puro — é esse status que o app usa para decidir se o login falhou.
 
 ### Exemplo — solicitar teleconsulta
 

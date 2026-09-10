@@ -4,6 +4,7 @@ import br.com.fiap.kuravet.exception.ConsultaNaoEncontradaException;
 import br.com.fiap.kuravet.exception.PetNaoEncontradoException;
 import br.com.fiap.kuravet.exception.RegraDeNegocioException;
 import br.com.fiap.kuravet.exception.TutorNaoEncontradoException;
+import br.com.fiap.kuravet.exception.VeterinarioNaoEncontradoException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -26,7 +27,8 @@ public class ApiExceptionHandler {
     @ExceptionHandler({
             ConsultaNaoEncontradaException.class,
             PetNaoEncontradoException.class,
-            TutorNaoEncontradoException.class
+            TutorNaoEncontradoException.class,
+            VeterinarioNaoEncontradoException.class
     })
     public ResponseEntity<Map<String, Object>> handleNaoEncontrado(RuntimeException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(corpoErro(HttpStatus.NOT_FOUND, ex.getMessage()));
