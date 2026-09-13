@@ -21,12 +21,6 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.List;
 
-/**
- * Portal web da clinica (Thymeleaf), restrito ao perfil VETERINARIO pelo
- * {@code SecurityConfig}. Expoe pela interface os mesmos dois fluxos de
- * negocio da API mobile, reaproveitando o {@link ConsultaService}: nenhuma
- * regra e reimplementada aqui.
- */
 @Controller
 public class PortalWebController {
 
@@ -41,9 +35,6 @@ public class PortalWebController {
         return "login";
     }
 
-    // ------------------------------------------------------------------
-    // Painel
-    // ------------------------------------------------------------------
 
     @GetMapping("/portal/painel")
     public String painel(Model model) {
@@ -54,9 +45,6 @@ public class PortalWebController {
         return "painel";
     }
 
-    // ------------------------------------------------------------------
-    // Fluxo 1 - Aprovacao de teleconsulta
-    // ------------------------------------------------------------------
 
     @GetMapping("/portal/solicitacoes")
     public String solicitacoes(@AuthenticationPrincipal UsuarioPrincipal principal, Model model) {
@@ -101,9 +89,6 @@ public class PortalWebController {
         return "redirect:/portal/solicitacoes";
     }
 
-    // ------------------------------------------------------------------
-    // Fluxo 2 - Realizacao e emissao de diagnostico
-    // ------------------------------------------------------------------
 
     @GetMapping("/portal/consultas")
     public String consultas(@AuthenticationPrincipal UsuarioPrincipal principal,

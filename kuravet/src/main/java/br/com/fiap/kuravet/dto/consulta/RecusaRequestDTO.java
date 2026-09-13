@@ -4,10 +4,6 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
-/**
- * Justificativa obrigatoria da recusa de uma solicitacao, compartilhada entre
- * o endpoint REST e o formulario do portal.
- */
 @Data
 public class RecusaRequestDTO {
 

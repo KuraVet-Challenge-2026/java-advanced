@@ -4,11 +4,6 @@ import br.com.fiap.kuravet.model.Pet;
 
 import java.time.LocalDate;
 
-/**
- * Payload de saida com os dados do PET. Achata a referencia ao TUTOR em
- * dois campos simples (idTutor/nomeTutor) para evitar LazyInitializationException
- * e recursao bidirecional na serializacao JSON.
- */
 public record PetResponseDTO(
         Long idPet,
         String nome,

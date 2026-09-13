@@ -6,11 +6,7 @@ import br.com.fiap.kuravet.model.Usuario;
 
 import java.time.LocalDate;
 
-/**
- * Payload de saida do autocadastro. Achata TUTOR e USUARIO em um unico
- * objeto para o app mobile sair do cadastro sabendo com quem logar. A senha
- * nunca aparece aqui, nem em texto nem em hash.
- */
+
 public record CadastroResponseDTO(
         Long idTutor,
         String nome,

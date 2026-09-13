@@ -16,11 +16,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.net.URI;
 
-/**
- * Autenticacao e autocadastro consumidos pelo app mobile. {@code /cadastro}
- * e publico (ver {@code SecurityConfig}); {@code /me} exige HTTP Basic como
- * o resto de {@code /api/**}.
- */
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {

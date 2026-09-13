@@ -17,10 +17,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-/**
- * CRUD de PET pelo portal da clinica. Reaproveita integralmente o
- * {@link PetService}: nenhuma regra e reimplementada aqui.
- */
 @Controller
 @RequestMapping("/portal/pets")
 public class PetWebController {
@@ -33,14 +29,12 @@ public class PetWebController {
         this.tutorService = tutorService;
     }
 
-    /** READ - listagem. */
     @GetMapping
     public String listar(@AuthenticationPrincipal UsuarioPrincipal principal, Model model) {
         model.addAttribute("pets", petService.listar(principal));
         return "pets";
     }
 
-    /** CREATE - formulario em branco. */
     @GetMapping("/novo")
     public String formularioNovo(Model model) {
         model.addAttribute("petForm", new PetForm());
@@ -49,7 +43,6 @@ public class PetWebController {
         return "pet-formulario";
     }
 
-    /** CREATE - gravacao. */
     @PostMapping
     public String cadastrar(@ModelAttribute("petForm") @Valid PetForm form,
                             BindingResult resultado,
@@ -67,7 +60,6 @@ public class PetWebController {
         return "redirect:/portal/pets";
     }
 
-    /** UPDATE - formulario preenchido. */
     @GetMapping("/{id}/editar")
     public String formularioEdicao(@AuthenticationPrincipal UsuarioPrincipal principal,
                                    @PathVariable Long id,
@@ -79,7 +71,6 @@ public class PetWebController {
         return "pet-formulario";
     }
 
-    /** UPDATE - gravacao. */
     @PostMapping("/{id}")
     public String atualizar(@AuthenticationPrincipal UsuarioPrincipal principal,
                             @PathVariable Long id,
@@ -99,7 +90,6 @@ public class PetWebController {
         return "redirect:/portal/pets";
     }
 
-    /** DELETE. */
     @PostMapping("/{id}/excluir")
     public String excluir(@AuthenticationPrincipal UsuarioPrincipal principal,
                           @PathVariable Long id,

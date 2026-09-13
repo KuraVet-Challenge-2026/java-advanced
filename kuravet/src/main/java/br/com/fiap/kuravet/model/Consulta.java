@@ -20,10 +20,6 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 
-/**
- * Mapeamento da tabela CONSULTA (V1__schema.sql, ampliada pela V4).
- * FKs KV_FK_CONS_PET -> PET(ID_PET) e KV_FK_CONS_VET -> VETERINARIO(ID_VETERINARIO).
- */
 @Entity
 @Table(name = "CONSULTA")
 @Data
@@ -52,18 +48,18 @@ public class Consulta {
     @Column(name = "TIPO_CONSULTA", length = 40, nullable = false)
     private String tipoConsulta;
 
-    /** Preenchido apenas quando REALIZADA (CHECK KV_CK_CONS_DIAGNOSTICO). */
+
     @Column(name = "DIAGNOSTICO", length = 400)
     private String diagnostico;
 
-    /** Preenchido apenas quando RECUSADA (CHECK KV_CK_CONS_MOTIVO). */
+
     @Column(name = "MOTIVO_RECUSA", length = 300)
     private String motivoRecusa;
 
     @Column(name = "DATA_SOLICITACAO", nullable = false)
     private LocalDate dataSolicitacao;
 
-    /** Estado inicial do fluxo: toda consulta comeca como pedido do tutor. */
+
     @Builder.Default
     @Enumerated(EnumType.STRING)
     @Column(name = "STATUS", length = 20, nullable = false)

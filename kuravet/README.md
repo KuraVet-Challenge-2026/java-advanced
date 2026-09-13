@@ -468,3 +468,5 @@ Verifique a conexão com a rede/VPN da FIAP.
 
 **A IDE não reconhece o projeto / botão de execução ausente**
 Abra a pasta `kuravet` (a que contém o `pom.xml`), não a raiz do repositório.
+
+LINK YOUTUBE: https://www.youtube.com/watch?v=up5OcE8ulrA

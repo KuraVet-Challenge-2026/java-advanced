@@ -5,10 +5,7 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
-/**
- * Payload de entrada do autocadastro publico via API mobile. Reune os dados
- * do TUTOR e as credenciais de acesso em uma unica requisicao.
- */
+
 public record CadastroRequestDTO(
 
         @NotBlank(message = "O nome do tutor e obrigatorio.")
@@ -32,7 +29,7 @@ public record CadastroRequestDTO(
         String senha
 ) {
 
-    /** Reaproveita o mesmo DTO/fluxo que TutorService.criar ja usa para o portal. */
+
     public TutorRequestDTO paraTutorDTO() {
         return new TutorRequestDTO(nome, cpf, telefone, email, endereco);
     }

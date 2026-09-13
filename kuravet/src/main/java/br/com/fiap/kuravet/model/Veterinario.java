@@ -12,9 +12,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * Mapeamento da tabela VETERINARIO (V1__Criar_Tabelas_Core.sql).
- */
 @Entity
 @Table(name = "VETERINARIO")
 @Data

@@ -5,11 +5,7 @@ import br.com.fiap.kuravet.model.Consulta;
 
 import java.time.LocalDate;
 
-/**
- * Payload de saida com os dados da CONSULTA. Achata as referencias a PET
- * e VETERINARIO em campos simples para evitar LazyInitializationException
- * e recursao bidirecional na serializacao JSON.
- */
+
 public record ConsultaResponseDTO(
         Long idConsulta,
         Long idPet,

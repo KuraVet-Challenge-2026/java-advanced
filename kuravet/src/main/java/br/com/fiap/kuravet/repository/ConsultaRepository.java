@@ -21,7 +21,7 @@ public interface ConsultaRepository extends JpaRepository<Consulta, Long> {
     long countByStatus(StatusConsulta status);
     boolean existsByPetIdPet(Long idPet);
 
-    /** Guarda a regra "um pet nao pode ter duas consultas ativas no mesmo dia". */
+
     boolean existsByPetIdPetAndDataConsultaAndStatusIn(Long idPet,
                                                        LocalDate dataConsulta,
                                                        Collection<StatusConsulta> status);

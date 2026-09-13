@@ -20,12 +20,6 @@ import org.springframework.web.bind.annotation.RestController;
 import java.net.URI;
 import java.util.List;
 
-/**
- * CRUD de PET consumido pelo app mobile (React Native). Trafega apenas
- * DTOs ({@link PetRequestDTO}/{@link PetResponseDTO}) para nao expor a
- * entidade JPA {@link Pet} diretamente ao cliente. Escrita e restrita a
- * TUTOR (ver {@code SecurityConfig}); o dono do pet e sempre o autenticado.
- */
 @RestController
 @RequestMapping("/api/pets")
 public class PetController {

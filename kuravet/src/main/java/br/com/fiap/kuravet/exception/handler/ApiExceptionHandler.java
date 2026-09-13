@@ -16,11 +16,6 @@ import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-/**
- * Tratamento global de excecoes da API REST ({@code /api/**}) consumida pelo
- * app mobile. Garante que erros de negocio e de validacao virem JSON
- * previsivel com o status HTTP correto, em vez do 500 padrao do Spring.
- */
 @RestControllerAdvice(basePackages = "br.com.fiap.kuravet.controller.api")
 public class ApiExceptionHandler {
 

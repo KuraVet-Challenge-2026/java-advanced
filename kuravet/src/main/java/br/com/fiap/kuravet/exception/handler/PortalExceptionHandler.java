@@ -10,11 +10,6 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
-/**
- * Traduz as excecoes de negocio em paginas HTML para o portal web, em vez do
- * JSON produzido pelo {@link ApiExceptionHandler}. Os dois convivem porque
- * cada um declara o pacote de controllers que atende.
- */
 @ControllerAdvice(basePackages = "br.com.fiap.kuravet.controller.web")
 public class PortalExceptionHandler {
 

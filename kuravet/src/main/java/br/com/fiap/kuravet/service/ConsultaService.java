@@ -20,31 +20,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * Regras de negocio do ciclo de vida da CONSULTA.
- *
- * <p>Implementa os dois fluxos funcionais do sistema:
- * <ol>
- *     <li><b>Aprovacao de teleconsulta</b> - o TUTOR solicita pelo app
- *         (SOLICITADA) e o VETERINARIO aprova (AGENDADA) ou recusa (RECUSADA)
- *         no portal, sempre com justificativa.</li>
- *     <li><b>Realizacao e emissao de diagnostico</b> - o VETERINARIO encerra
- *         uma consulta AGENDADA registrando o diagnostico (REALIZADA).</li>
- * </ol>
- */
 @Service
 public class ConsultaService {
 
-    /**
-     * Unica fonte de verdade das transicoes permitidas. REALIZADA, CANCELADA
-     * e RECUSADA nao aparecem como chave porque sao estados terminais.
-     */
     private static final Map<StatusConsulta, Set<StatusConsulta>> TRANSICOES_PERMITIDAS = Map.of(
             StatusConsulta.SOLICITADA, Set.of(StatusConsulta.AGENDADA, StatusConsulta.RECUSADA),
             StatusConsulta.AGENDADA, Set.of(StatusConsulta.REALIZADA, StatusConsulta.CANCELADA)
     );
 
-    /** Estados que ocupam a agenda do pet e impedem uma nova consulta no mesmo dia. */
     private static final Set<StatusConsulta> ESTADOS_ATIVOS =
             Set.of(StatusConsulta.SOLICITADA, StatusConsulta.AGENDADA);
 
@@ -60,9 +43,6 @@ public class ConsultaService {
         this.veterinarioRepository = veterinarioRepository;
     }
 
-    // ------------------------------------------------------------------
-    // Consultas de leitura
-    // ------------------------------------------------------------------
 
     public List<Consulta> listar(UsuarioPrincipal principal) {
         if (principal.isTutor()) {
@@ -79,15 +59,10 @@ public class ConsultaService {
         return consultaRepository.findByStatusOrderByDataConsultaAsc(status);
     }
 
-    /** Contagem usada pelos indicadores do painel do veterinario. */
     public long contarPorStatus(StatusConsulta status) {
         return consultaRepository.countByStatus(status);
     }
 
-    /**
-     * Uma consulta de outro tutor "nao existe" para o TUTOR autenticado (404
-     * em vez de 403), para nao revelar a existencia de registros de terceiros.
-     */
     public Consulta buscarPorId(UsuarioPrincipal principal, Long id) {
         Consulta consulta = consultaRepository.findById(id)
                 .orElseThrow(() -> new ConsultaNaoEncontradaException(id));
@@ -99,17 +74,6 @@ public class ConsultaService {
         return consulta;
     }
 
-    // ------------------------------------------------------------------
-    // Fluxo 1 - Aprovacao de teleconsulta
-    // ------------------------------------------------------------------
-
-    /**
-     * Passo 1: o TUTOR pede uma teleconsulta para um pet proprio.
-     *
-     * <p>Regras: o pet precisa ser do tutor autenticado, o veterinario precisa
-     * existir, e o pet nao pode ter outra consulta ativa (SOLICITADA ou
-     * AGENDADA) na mesma data.
-     */
     @Transactional
     public Consulta solicitarTeleconsulta(UsuarioPrincipal principal, ConsultaRequestDTO dto) {
         Pet pet = buscarPetOuLancar(principal, dto.idPet());
@@ -133,7 +97,6 @@ public class ConsultaService {
         return consultaRepository.save(solicitacao);
     }
 
-    /** Passo 2a: o VETERINARIO aprova a solicitacao, que vira compromisso firme. */
     @Transactional
     public Consulta aprovarSolicitacao(Long idConsulta) {
         Consulta consulta = buscarOuLancar(idConsulta);
@@ -141,7 +104,6 @@ public class ConsultaService {
         return consultaRepository.save(consulta);
     }
 
-    /** Passo 2b: o VETERINARIO recusa, e a justificativa fica registrada. */
     @Transactional
     public Consulta recusarSolicitacao(Long idConsulta, String motivo) {
         Consulta consulta = buscarOuLancar(idConsulta);
@@ -150,14 +112,6 @@ public class ConsultaService {
         return consultaRepository.save(consulta);
     }
 
-    // ------------------------------------------------------------------
-    // Fluxo 2 - Realizacao e emissao de diagnostico
-    // ------------------------------------------------------------------
-
-    /**
-     * Encerra o atendimento. Só uma consulta AGENDADA pode ser realizada: uma
-     * solicitacao ainda pendente ou ja recusada nunca vira atendimento.
-     */
     @Transactional
     public Consulta realizarConsultaComDiagnostico(Long idConsulta, String diagnostico) {
         Consulta consulta = buscarOuLancar(idConsulta);
@@ -172,10 +126,6 @@ public class ConsultaService {
         transicionar(consulta, StatusConsulta.CANCELADA);
         return consultaRepository.save(consulta);
     }
-
-    // ------------------------------------------------------------------
-    // CRUD de apoio
-    // ------------------------------------------------------------------
 
     @Transactional
     public Consulta atualizar(UsuarioPrincipal principal, Long id, ConsultaRequestDTO dto) {
@@ -200,14 +150,6 @@ public class ConsultaService {
         consultaRepository.delete(buscarPorId(principal, id));
     }
 
-    // ------------------------------------------------------------------
-    // Apoio interno
-    // ------------------------------------------------------------------
-
-    /**
-     * Unico ponto do sistema que altera {@code Consulta.status}. Nenhum
-     * controller ou outro metodo chama {@code setStatus(...)} diretamente.
-     */
     private void transicionar(Consulta consulta, StatusConsulta novoStatus) {
         Set<StatusConsulta> permitidas = TRANSICOES_PERMITIDAS.getOrDefault(consulta.getStatus(), Set.of());
 

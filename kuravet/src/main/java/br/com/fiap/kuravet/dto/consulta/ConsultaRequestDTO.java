@@ -7,13 +7,6 @@ import jakarta.validation.constraints.Size;
 
 import java.time.LocalDate;
 
-/**
- * Payload de solicitacao e de remarcacao de CONSULTA.
- *
- * <p>Nao trafega {@code status}, {@code diagnostico} nem {@code motivoRecusa}:
- * essas transicoes sao exclusivas dos fluxos do {@code ConsultaService}.
- * O dono do pet tambem nao vem daqui — e sempre o usuario autenticado.
- */
 public record ConsultaRequestDTO(
 
         @NotNull(message = "O ID do pet e obrigatorio.")

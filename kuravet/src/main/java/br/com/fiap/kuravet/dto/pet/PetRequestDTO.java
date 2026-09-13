@@ -6,12 +6,6 @@ import jakarta.validation.constraints.Past;
 
 import java.time.LocalDate;
 
-/**
- * Payload de entrada para cadastro/atualizacao de PET via API mobile.
- * Nao carrega idTutor: o dono do pet e sempre o TUTOR autenticado
- * (ver {@link br.com.fiap.kuravet.service.PetService}), nunca um valor
- * vindo do cliente.
- */
 public record PetRequestDTO(
 
         @NotBlank(message = "O nome do pet e obrigatorio.")

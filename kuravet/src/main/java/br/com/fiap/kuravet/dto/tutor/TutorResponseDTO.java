@@ -4,9 +4,6 @@ import br.com.fiap.kuravet.model.Tutor;
 
 import java.time.LocalDate;
 
-/**
- * Payload de saida com os dados do TUTOR.
- */
 public record TutorResponseDTO(
         Long idTutor,
         String nome,

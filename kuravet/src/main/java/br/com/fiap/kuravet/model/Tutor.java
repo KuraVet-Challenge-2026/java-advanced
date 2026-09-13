@@ -14,9 +14,6 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 
-/**
- * Mapeamento da tabela TUTOR (V1__Criar_Tabelas_Core.sql).
- */
 @Entity
 @Table(name = "TUTOR")
 @Data

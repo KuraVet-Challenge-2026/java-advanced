@@ -18,11 +18,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * Mapeamento da tabela USUARIO (V1__schema.sql).
- * FK KV_FK_USU_TUTOR -> TUTOR(ID_TUTOR), preenchida somente quando
- * PERFIL = TUTOR (CHECK KV_CK_USU_TUTOR).
- */
 @Entity
 @Table(name = "USUARIO")
 @Data

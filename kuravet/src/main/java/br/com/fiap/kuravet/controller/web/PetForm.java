@@ -11,11 +11,6 @@ import org.springframework.format.annotation.DateTimeFormat;
 
 import java.time.LocalDate;
 
-/**
- * Vinculo do formulario de cadastro e edicao de PET no portal.
- * Diferente do {@link PetRequestDTO} da API, carrega o idTutor: no portal
- * quem escolhe o dono e o veterinario.
- */
 @Data
 public class PetForm {
 
@@ -43,7 +38,6 @@ public class PetForm {
     @NotNull(message = "Informe o sexo do pet.")
     private Character sexo;
 
-    /** Converte para o DTO que o service ja conhece, sem duplicar regra. */
     public PetRequestDTO paraDTO() {
         return new PetRequestDTO(nome, especie, raca, dataNascimento, sexo);
     }

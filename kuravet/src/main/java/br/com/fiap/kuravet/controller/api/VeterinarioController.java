@@ -11,11 +11,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
-/**
- * Leitura de VETERINARIO consumida pelo app mobile (React Native), usada
- * para montar a escolha de profissional em {@code POST /api/consultas/solicitacoes}.
- * Somente leitura: cadastro de veterinario e feito fora do app.
- */
 @RestController
 @RequestMapping("/api/veterinarios")
 public class VeterinarioController {

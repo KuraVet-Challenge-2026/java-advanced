@@ -2,10 +2,6 @@ package br.com.fiap.kuravet.dto.veterinario;
 
 import br.com.fiap.kuravet.model.Veterinario;
 
-/**
- * Payload de saida com os dados do VETERINARIO, usado pelo app mobile para
- * montar a escolha de profissional ao solicitar uma teleconsulta.
- */
 public record VeterinarioResponseDTO(
         Long idVeterinario,
         String nome,

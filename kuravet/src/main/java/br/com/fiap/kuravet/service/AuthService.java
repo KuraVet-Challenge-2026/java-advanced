@@ -14,12 +14,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/**
- * Autenticacao e autocadastro consumidos pelo app mobile.
- *
- * <p>O autocadastro publico ({@link #cadastrar}) sempre cria um USUARIO de
- * perfil TUTOR: o papel nunca vem do cliente, e definido aqui no servidor.
- */
 @Service
 public class AuthService {
 
@@ -38,11 +32,6 @@ public class AuthService {
         this.passwordEncoder = passwordEncoder;
     }
 
-    /**
-     * Cria o TUTOR e o USUARIO correspondente em uma unica transacao. Antes
-     * de gravar, confere username e CPF unicos para responder 400 com uma
-     * mensagem clara em vez de deixar a constraint do banco estourar um 500.
-     */
     @Transactional
     public CadastroResponseDTO cadastrar(CadastroRequestDTO dto) {
         if (usuarioRepository.existsByUsername(dto.username())) {
@@ -64,7 +53,6 @@ public class AuthService {
         return CadastroResponseDTO.de(usuarioRepository.save(usuario));
     }
 
-    /** Ponto unico para o app validar login e obter o perfil autenticado. */
     public MeResponseDTO me(UsuarioPrincipal principal) {
         String nomeTutor = principal.isTutor()
                 ? tutorService.buscarPorId(principal.getIdTutor()).getNome()

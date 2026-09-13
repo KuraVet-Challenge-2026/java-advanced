@@ -9,11 +9,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 import java.util.Collection;
 import java.util.List;
 
-/**
- * Adapta {@link Usuario} para o contrato do Spring Security, expondo tambem
- * o perfil e o idTutor associado para uso direto nos services (via
- * {@code @AuthenticationPrincipal}), sem precisar consultar o banco de novo.
- */
 public class UsuarioPrincipal implements UserDetails {
 
     private final Long idUsuario;

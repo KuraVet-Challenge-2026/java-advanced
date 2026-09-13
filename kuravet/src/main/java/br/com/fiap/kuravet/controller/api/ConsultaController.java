@@ -25,11 +25,6 @@ import org.springframework.web.bind.annotation.RestController;
 import java.net.URI;
 import java.util.List;
 
-/**
- * Endpoints de CONSULTA consumidos pelo app mobile. Trafega apenas DTOs e
- * delega as regras ao {@link ConsultaService}. As permissoes por perfil estao
- * declaradas em {@code SecurityConfig}.
- */
 @RestController
 @RequestMapping("/api/consultas")
 public class ConsultaController {
@@ -57,7 +52,6 @@ public class ConsultaController {
         return ResponseEntity.ok(ConsultaResponseDTO.fromEntity(consultaService.buscarPorId(principal, id)));
     }
 
-    /** Fluxo 1, passo 1: o tutor solicita a teleconsulta pelo app. */
     @PostMapping("/solicitacoes")
     public ResponseEntity<ConsultaResponseDTO> solicitar(@AuthenticationPrincipal UsuarioPrincipal principal,
                                                          @RequestBody @Valid ConsultaRequestDTO dto) {
@@ -66,13 +60,11 @@ public class ConsultaController {
                 .body(ConsultaResponseDTO.fromEntity(solicitacao));
     }
 
-    /** Fluxo 1, passo 2a: o veterinario aprova. */
     @PatchMapping("/{id}/aprovacao")
     public ResponseEntity<ConsultaResponseDTO> aprovar(@PathVariable Long id) {
         return ResponseEntity.ok(ConsultaResponseDTO.fromEntity(consultaService.aprovarSolicitacao(id)));
     }
 
-    /** Fluxo 1, passo 2b: o veterinario recusa, com justificativa. */
     @PatchMapping("/{id}/recusa")
     public ResponseEntity<ConsultaResponseDTO> recusar(@PathVariable Long id,
                                                        @RequestBody @Valid RecusaRequestDTO dto) {
@@ -80,7 +72,6 @@ public class ConsultaController {
                 consultaService.recusarSolicitacao(id, dto.getMotivo())));
     }
 
-    /** Fluxo 2: o veterinario encerra o atendimento emitindo o diagnostico. */
     @PatchMapping("/{id}/diagnostico")
     public ResponseEntity<ConsultaResponseDTO> emitirDiagnostico(@PathVariable Long id,
                                                                  @RequestBody @Valid DiagnosticoRequestDTO dto) {

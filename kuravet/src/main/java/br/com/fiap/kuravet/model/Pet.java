@@ -17,10 +17,6 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 
-/**
- * Mapeamento da tabela PET (V1__Criar_Tabelas_Core.sql).
- * FK KV_FK_PET_TUTOR -> TUTOR(ID_TUTOR).
- */
 @Entity
 @Table(name = "PET")
 @Data
@@ -47,7 +43,6 @@ public class Pet {
     @Column(name = "DATA_NASCIMENTO", nullable = false)
     private LocalDate dataNascimento;
 
-    /** CHECK KV_CK_PET_SEXO: 'M' ou 'F'. */
     @Column(name = "SEXO", length = 1, nullable = false)
     private Character sexo;
 

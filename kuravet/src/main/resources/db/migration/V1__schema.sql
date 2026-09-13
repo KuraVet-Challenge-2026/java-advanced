@@ -70,11 +70,7 @@ CREATE TABLE USUARIO (
     CONSTRAINT KV_FK_USU_TUTOR FOREIGN KEY (ID_TUTOR) REFERENCES TUTOR(ID_TUTOR)
 );
 
---------------------------------------------------------------------------------
--- SEQUENCES PARA GERACAO DE PK
--- Os seeds de V2/V3 usam IDs baixos manualmente; as sequences comecam em 11
--- (100 para USUARIO, que tem menos seed) para nao colidir com eles.
---------------------------------------------------------------------------------
+
 
 CREATE SEQUENCE SEQ_TUTOR       START WITH 11  INCREMENT BY 1 NOCACHE NOCYCLE;
 CREATE SEQUENCE SEQ_VETERINARIO START WITH 11  INCREMENT BY 1 NOCACHE NOCYCLE;
