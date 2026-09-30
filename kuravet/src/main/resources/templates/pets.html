@@ -27,6 +27,7 @@
                 <th>Nascimento</th>
                 <th>Sexo</th>
                 <th>Tutor</th>
+                <th>Codigo</th>
                 <th>Acoes</th>
             </tr>
             </thead>
@@ -39,6 +40,7 @@
                 <td th:text="${#temporals.format(p.dataNascimento, 'dd/MM/yyyy')}">--</td>
                 <td th:text="${p.sexo}">M</td>
                 <td th:text="${p.tutor.nome}">Tutor</td>
+                <td th:text="${p.codigoIdentificacao} ?: '—'">—</td>
                 <td>
                     <div class="acoes">
                         <a class="botao botao-secundario"
@@ -51,7 +53,7 @@
                 </td>
             </tr>
             <tr th:if="${#lists.isEmpty(pets)}">
-                <td colspan="8" class="vazio">Nenhum pet cadastrado ainda.</td>
+                <td colspan="9" class="vazio">Nenhum pet cadastrado ainda.</td>
             </tr>
             </tbody>
         </table>

@@ -5,6 +5,7 @@ import br.com.fiap.kuravet.model.Pet;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Past;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -38,8 +39,12 @@ public class PetForm {
     @NotNull(message = "Informe o sexo do pet.")
     private Character sexo;
 
+    @Size(max = 40, message = "O codigo de identificacao deve ter no maximo 40 caracteres.")
+    @Pattern(regexp = "^[A-Za-z0-9._-]*$", message = "O codigo de identificacao deve conter apenas letras, numeros, ponto, hifen ou underscore.")
+    private String codigoIdentificacao;
+
     public PetRequestDTO paraDTO() {
-        return new PetRequestDTO(nome, especie, raca, dataNascimento, sexo);
+        return new PetRequestDTO(nome, especie, raca, dataNascimento, sexo, codigoIdentificacao);
     }
 
     public static PetForm de(Pet pet) {
@@ -51,6 +56,7 @@ public class PetForm {
         form.setRaca(pet.getRaca());
         form.setDataNascimento(pet.getDataNascimento());
         form.setSexo(pet.getSexo());
+        form.setCodigoIdentificacao(pet.getCodigoIdentificacao());
         return form;
     }
 }
