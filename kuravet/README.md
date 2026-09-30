@@ -82,6 +82,7 @@ As regras não vivem apenas no Java. O banco garante as mesmas invariantes por *
 | `KV_CK_USU_PERFIL` | perfil ∈ {TUTOR, VETERINARIO} |
 | `KV_CK_USU_TUTOR` | `ID_TUTOR` é obrigatório quando o perfil é TUTOR e proibido quando é VETERINARIO |
 | `KV_CK_PET_SEXO` | sexo ∈ {M, F} |
+| `KV_UQ_PET_CODIGO` | `CODIGO_IDENTIFICACAO` é único quando preenchido (campo opcional — aceita múltiplos `NULL`) |
  
 ---
 
@@ -181,6 +182,7 @@ O schema é criado e versionado automaticamente na inicialização, a partir de 
 | `V3__seed_tutor_inicial.sql` | Tutor inicial e seu usuário de perfil TUTOR |
 | `V4__consulta_teleconsulta.sql` | Amplia a máquina de estados: status `SOLICITADA` e `RECUSADA`, colunas `DATA_SOLICITACAO` e `MOTIVO_RECUSA`, novas CHECK constraints |
 | `V5__seed_pets_e_consultas.sql` | Pets e consultas cobrindo todos os estados do fluxo |
+| `V6__pet_codigo_identificacao.sql` | Coluna opcional `CODIGO_IDENTIFICACAO` em PET (código da Petz, microchip etc.), única quando preenchida |
 
 Nenhum script precisa ser executado à mão: basta iniciar a aplicação apontando para um schema Oracle válido.
 
@@ -334,6 +336,49 @@ Resposta `200 OK`:
 ```
 
 `idTutor`/`nomeTutor` vêm `null` quando `perfil` é `VETERINARIO`. Credencial ausente ou inválida responde `401` puro — é esse status que o app usa para decidir se o login falhou.
+
+### Exemplo — cadastrar pet (app mobile)
+
+`codigoIdentificacao` é **opcional e aditivo**: requisições antigas, sem o campo, continuam funcionando normalmente.
+
+```http
+POST /api/pets
+Authorization: Basic dHV0b3I6dHV0b3IxMjM=
+Content-Type: application/json
+
+{
+  "nome": "Bidu",
+  "especie": "Cachorro",
+  "raca": "Vira-lata",
+  "dataNascimento": "2022-01-01",
+  "sexo": "M",
+  "codigoIdentificacao": " pz-123 "
+}
+```
+
+Resposta `201 Created` (o código é normalizado — espaços nas pontas removidos e letras maiúsculas):
+
+```json
+{
+  "idPet": 12,
+  "nome": "Bidu",
+  "especie": "Cachorro",
+  "raca": "Vira-lata",
+  "dataNascimento": "2022-01-01",
+  "sexo": "M",
+  "idTutor": 1,
+  "nomeTutor": "Ana Paula Ferreira",
+  "codigoIdentificacao": "PZ-123"
+}
+```
+
+Se `codigoIdentificacao` já estiver em uso por outro pet, a resposta é `400 Bad Request`:
+
+```json
+{
+  "mensagem": "Ja existe um pet cadastrado com o codigo de identificacao PZ-123."
+}
+```
 
 ### Exemplo — solicitar teleconsulta
 
