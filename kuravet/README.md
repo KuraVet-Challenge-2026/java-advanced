@@ -50,14 +50,18 @@ A aplicação implementa dois fluxos funcionais completos, além do CRUD de apoi
 ### Máquina de estados da consulta
 
 ```
-SOLICITADA ──aprovar──▶ AGENDADA ──diagnóstico──▶ REALIZADA
-     │                      │
-   recusar               cancelar
-     ▼                      ▼
-  RECUSADA              CANCELADA
+SOLICITADA ──aprovar───▶ AGENDADA ──diagnóstico──▶ REALIZADA
+     │    ╲                  │
+   recusar  ╲cancelar      cancelar
+     ▼        ╲               ▼
+  RECUSADA      ╲────────▶ CANCELADA
 ```
 
 `REALIZADA`, `RECUSADA` e `CANCELADA` são estados terminais. Qualquer transição fora deste mapa é rejeitada com `400 Bad Request` e a mensagem `Transicao de status invalida: X -> Y`.
+
+**Cancelamento tem regra própria por perfil** (`ConsultaService.podeCancelar`, único ponto de decisão — reaproveitado pelo portal para exibir ou não o botão):
+- **TUTOR** cancela `SOLICITADA` ou `AGENDADA`, e só as **próprias** consultas (ownership de `buscarPorId`; consulta de outro tutor responde `404`).
+- **VETERINARIO** cancela apenas `AGENDADA`. Uma solicitação ainda pendente (`SOLICITADA`) deve ser **recusada com motivo**, nunca cancelada — a tentativa responde `400` com `Solicitacoes pendentes devem ser recusadas com um motivo.`.
 
 ### Fluxo 1 — Aprovação de teleconsulta
 
@@ -69,6 +73,10 @@ SOLICITADA ──aprovar──▶ AGENDADA ──diagnóstico──▶ REALIZADA
 ### Fluxo 2 — Realização e emissão de diagnóstico
 
 O veterinário abre uma consulta `AGENDADA` no portal e registra o diagnóstico (entre 15 e 400 caracteres). A consulta passa a `REALIZADA` e não pode mais ser alterada. Uma consulta ainda `SOLICITADA` ou já `RECUSADA` nunca vira atendimento.
+
+### Exclusão física de consultas
+
+`DELETE /api/consultas/{id}` exige perfil `VETERINARIO` (um `TUTOR` recebe `403`) e nunca apaga uma consulta `REALIZADA` — ela faz parte do histórico clínico e a tentativa responde `400` com `Consultas realizadas fazem parte do historico clinico e nao podem ser excluidas.`. Para os demais estados, a exclusão é física e definitiva; quem precisa encerrar o fluxo sem apagar histórico deve usar o cancelamento.
 
 ### Regras espelhadas no schema
 
@@ -277,9 +285,9 @@ Base: `http://localhost:8080/api`. Todas as rotas exigem HTTP Basic, exceto `/ap
 | `PATCH` | `/api/consultas/{id}/aprovacao` | VETERINARIO | Aprova a solicitação |
 | `PATCH` | `/api/consultas/{id}/recusa` | VETERINARIO | Recusa com justificativa |
 | `PATCH` | `/api/consultas/{id}/diagnostico` | VETERINARIO | Emite diagnóstico e encerra |
-| `PATCH` | `/api/consultas/{id}/cancelamento` | autenticado | Cancela consulta agendada |
+| `PATCH` | `/api/consultas/{id}/cancelamento` | autenticado | Cancela: TUTOR só a própria `SOLICITADA`/`AGENDADA`; VETERINARIO só `AGENDADA` |
 | `PUT` | `/api/consultas/{id}` | autenticado | Atualiza pet, veterinário, data ou tipo |
-| `DELETE` | `/api/consultas/{id}` | autenticado | Exclui consulta |
+| `DELETE` | `/api/consultas/{id}` | VETERINARIO | Exclui consulta (bloqueado para `REALIZADA`, que fica no histórico clínico) |
 
 ### Exemplo — autocadastro do tutor (app mobile)
 
