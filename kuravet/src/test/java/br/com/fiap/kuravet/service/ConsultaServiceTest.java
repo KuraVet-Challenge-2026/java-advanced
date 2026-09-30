@@ -332,6 +332,20 @@ class ConsultaServiceTest {
         assertThat(consultaService.podeCancelar(veterinario, realizada)).isFalse();
     }
 
+    // ---------- excluir ----------
+
+    @Test
+    void deveLancarRegraDeNegocioAoExcluirConsultaRealizada() {
+        Consulta consulta = consulta(1L, pet(10L, ID_TUTOR_1), veterinario(20L),
+                StatusConsulta.REALIZADA, LocalDate.now().plusDays(5));
+        when(consultaRepository.findById(1L)).thenReturn(Optional.of(consulta));
+
+        assertThrows(RegraDeNegocioException.class,
+                () -> consultaService.excluir(principalVeterinario(), 1L));
+
+        verify(consultaRepository, never()).delete(any());
+    }
+
     // ---------- 8. transicoes invalidas ----------
 
     @ParameterizedTest(name = "deveRecusarTransicaoDeEstadoInvalida: {0} -> {1}")

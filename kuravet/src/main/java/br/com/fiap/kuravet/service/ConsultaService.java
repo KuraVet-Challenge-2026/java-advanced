@@ -164,7 +164,14 @@ public class ConsultaService {
 
     @Transactional
     public void excluir(UsuarioPrincipal principal, Long id) {
-        consultaRepository.delete(buscarPorId(principal, id));
+        Consulta consulta = buscarPorId(principal, id);
+
+        if (consulta.getStatus() == StatusConsulta.REALIZADA) {
+            throw new RegraDeNegocioException(
+                    "Consultas realizadas fazem parte do historico clinico e nao podem ser excluidas.");
+        }
+
+        consultaRepository.delete(consulta);
     }
 
     private void transicionar(Consulta consulta, StatusConsulta novoStatus) {
