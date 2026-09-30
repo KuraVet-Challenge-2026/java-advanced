@@ -49,4 +49,7 @@ public class Pet {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ID_TUTOR", nullable = false)
     private Tutor tutor;
+
+    @Column(name = "CODIGO_IDENTIFICACAO", length = 40)
+    private String codigoIdentificacao;
 }
