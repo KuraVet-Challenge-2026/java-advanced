@@ -19,6 +19,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -231,8 +232,23 @@ class ConsultaServiceTest {
         verify(consultaRepository).save(consulta);
     }
 
+    // ---------- cancelamento: regra depende do perfil (TUTOR x VETERINARIO) ----------
+
     @Test
-    void deveCancelarConsultaAgendadaTransicionandoParaCancelada() {
+    void deveCancelarSolicitacaoDoProprioTutor() {
+        Consulta consulta = consulta(1L, pet(10L, ID_TUTOR_1), veterinario(20L),
+                StatusConsulta.SOLICITADA, LocalDate.now().plusDays(5));
+        when(consultaRepository.findById(1L)).thenReturn(Optional.of(consulta));
+        mockSalvarRetornandoArgumento();
+
+        Consulta resultado = consultaService.cancelar(principalTutor(ID_TUTOR_1), 1L);
+
+        assertThat(resultado.getStatus()).isEqualTo(StatusConsulta.CANCELADA);
+        verify(consultaRepository).save(consulta);
+    }
+
+    @Test
+    void deveCancelarAgendadaDoProprioTutor() {
         Consulta consulta = consulta(1L, pet(10L, ID_TUTOR_1), veterinario(20L),
                 StatusConsulta.AGENDADA, LocalDate.now().plusDays(5));
         when(consultaRepository.findById(1L)).thenReturn(Optional.of(consulta));
@@ -242,6 +258,78 @@ class ConsultaServiceTest {
 
         assertThat(resultado.getStatus()).isEqualTo(StatusConsulta.CANCELADA);
         verify(consultaRepository).save(consulta);
+    }
+
+    @Test
+    void deveLancarConsultaNaoEncontradaAoTutorCancelarConsultaDeOutroTutor() {
+        Consulta consulta = consulta(1L, pet(10L, ID_TUTOR_2), veterinario(20L),
+                StatusConsulta.AGENDADA, LocalDate.now().plusDays(5));
+        when(consultaRepository.findById(1L)).thenReturn(Optional.of(consulta));
+
+        assertThrows(ConsultaNaoEncontradaException.class,
+                () -> consultaService.cancelar(principalTutor(ID_TUTOR_1), 1L));
+
+        verify(consultaRepository, never()).save(any());
+    }
+
+    @ParameterizedTest(name = "deveRecusarCancelamentoPeloTutorEmEstadoTerminal: {0}")
+    @EnumSource(value = StatusConsulta.class, names = {"REALIZADA", "RECUSADA", "CANCELADA"})
+    void deveRecusarCancelamentoPeloTutorEmEstadoTerminal(StatusConsulta statusAtual) {
+        Consulta consulta = consulta(1L, pet(10L, ID_TUTOR_1), veterinario(20L),
+                statusAtual, LocalDate.now().plusDays(5));
+        when(consultaRepository.findById(1L)).thenReturn(Optional.of(consulta));
+
+        assertThrows(RegraDeNegocioException.class,
+                () -> consultaService.cancelar(principalTutor(ID_TUTOR_1), 1L));
+
+        verify(consultaRepository, never()).save(any());
+    }
+
+    @Test
+    void deveCancelarConsultaAgendadaPeloVeterinario() {
+        Consulta consulta = consulta(1L, pet(10L, ID_TUTOR_1), veterinario(20L),
+                StatusConsulta.AGENDADA, LocalDate.now().plusDays(5));
+        when(consultaRepository.findById(1L)).thenReturn(Optional.of(consulta));
+        mockSalvarRetornandoArgumento();
+
+        Consulta resultado = consultaService.cancelar(principalVeterinario(), 1L);
+
+        assertThat(resultado.getStatus()).isEqualTo(StatusConsulta.CANCELADA);
+        verify(consultaRepository).save(consulta);
+    }
+
+    @Test
+    void deveRecusarCancelamentoDeSolicitacaoPendentePeloVeterinario() {
+        Consulta consulta = consulta(1L, pet(10L, ID_TUTOR_1), veterinario(20L),
+                StatusConsulta.SOLICITADA, LocalDate.now().plusDays(5));
+        when(consultaRepository.findById(1L)).thenReturn(Optional.of(consulta));
+
+        RegraDeNegocioException excecao = assertThrows(RegraDeNegocioException.class,
+                () -> consultaService.cancelar(principalVeterinario(), 1L));
+
+        assertThat(excecao.getMessage()).isEqualTo("Solicitacoes pendentes devem ser recusadas com um motivo.");
+        verify(consultaRepository, never()).save(any());
+    }
+
+    @Test
+    void podeCancelarDeveSerCoerenteComAsRegrasDeCancelamento() {
+        Consulta solicitada = consulta(1L, pet(10L, ID_TUTOR_1), veterinario(20L),
+                StatusConsulta.SOLICITADA, LocalDate.now().plusDays(5));
+        Consulta agendada = consulta(2L, pet(10L, ID_TUTOR_1), veterinario(20L),
+                StatusConsulta.AGENDADA, LocalDate.now().plusDays(5));
+        Consulta realizada = consulta(3L, pet(10L, ID_TUTOR_1), veterinario(20L),
+                StatusConsulta.REALIZADA, LocalDate.now().plusDays(5));
+
+        UsuarioPrincipal tutor = principalTutor(ID_TUTOR_1);
+        UsuarioPrincipal veterinario = principalVeterinario();
+
+        assertThat(consultaService.podeCancelar(tutor, solicitada)).isTrue();
+        assertThat(consultaService.podeCancelar(tutor, agendada)).isTrue();
+        assertThat(consultaService.podeCancelar(tutor, realizada)).isFalse();
+
+        assertThat(consultaService.podeCancelar(veterinario, solicitada)).isFalse();
+        assertThat(consultaService.podeCancelar(veterinario, agendada)).isTrue();
+        assertThat(consultaService.podeCancelar(veterinario, realizada)).isFalse();
     }
 
     // ---------- 8. transicoes invalidas ----------

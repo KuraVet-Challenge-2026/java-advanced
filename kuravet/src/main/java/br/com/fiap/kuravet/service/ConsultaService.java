@@ -25,7 +25,7 @@ public class ConsultaService {
 
     private static final Map<StatusConsulta, Set<StatusConsulta>> TRANSICOES_PERMITIDAS = Map.of(
             StatusConsulta.SOLICITADA, Set.of(StatusConsulta.AGENDADA, StatusConsulta.RECUSADA),
-            StatusConsulta.AGENDADA, Set.of(StatusConsulta.REALIZADA, StatusConsulta.CANCELADA)
+            StatusConsulta.AGENDADA, Set.of(StatusConsulta.REALIZADA)
     );
 
     private static final Set<StatusConsulta> ESTADOS_ATIVOS =
@@ -123,8 +123,25 @@ public class ConsultaService {
     @Transactional
     public Consulta cancelar(UsuarioPrincipal principal, Long idConsulta) {
         Consulta consulta = buscarPorId(principal, idConsulta);
-        transicionar(consulta, StatusConsulta.CANCELADA);
+
+        if (!podeCancelar(principal, consulta)) {
+            if (!principal.isTutor() && consulta.getStatus() == StatusConsulta.SOLICITADA) {
+                throw new RegraDeNegocioException("Solicitacoes pendentes devem ser recusadas com um motivo.");
+            }
+            throw new RegraDeNegocioException(
+                    "Transicao de status invalida: " + consulta.getStatus() + " -> " + StatusConsulta.CANCELADA + ".");
+        }
+
+        consulta.setStatus(StatusConsulta.CANCELADA);
         return consultaRepository.save(consulta);
+    }
+
+    // VETERINARIO so cancela AGENDADA: uma solicitacao pendente deve ser recusada, nunca cancelada.
+    public boolean podeCancelar(UsuarioPrincipal principal, Consulta consulta) {
+        if (principal.isTutor()) {
+            return ESTADOS_ATIVOS.contains(consulta.getStatus());
+        }
+        return consulta.getStatus() == StatusConsulta.AGENDADA;
     }
 
     @Transactional
