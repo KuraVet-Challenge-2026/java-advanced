@@ -1,0 +1,1 @@
+az group create -n $RG -l $LOCAL
