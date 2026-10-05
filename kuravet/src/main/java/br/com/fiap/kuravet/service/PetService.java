@@ -96,6 +96,30 @@ public class PetService {
         pet.setRaca(dto.raca());
         pet.setDataNascimento(dto.dataNascimento());
         pet.setSexo(dto.sexo());
+
+        String codigoIdentificacao = normalizarCodigoIdentificacao(dto.codigoIdentificacao());
+        if (codigoIdentificacao != null) {
+            validarCodigoIdentificacaoUnico(pet.getIdPet(), codigoIdentificacao);
+        }
+        pet.setCodigoIdentificacao(codigoIdentificacao);
+    }
+
+    private String normalizarCodigoIdentificacao(String codigoIdentificacao) {
+        if (codigoIdentificacao == null || codigoIdentificacao.isBlank()) {
+            return null;
+        }
+        return codigoIdentificacao.trim().toUpperCase();
+    }
+
+    private void validarCodigoIdentificacaoUnico(Long idPet, String codigoIdentificacao) {
+        boolean duplicado = idPet == null
+                ? petRepository.existsByCodigoIdentificacao(codigoIdentificacao)
+                : petRepository.existsByCodigoIdentificacaoAndIdPetNot(codigoIdentificacao, idPet);
+
+        if (duplicado) {
+            throw new RegraDeNegocioException(
+                    "Ja existe um pet cadastrado com o codigo de identificacao " + codigoIdentificacao + ".");
+        }
     }
 
     private Tutor buscarTutorOuLancar(Long idTutor) {

@@ -10,4 +10,8 @@ import java.util.List;
 public interface PetRepository extends JpaRepository<Pet, Long> {
 
     List<Pet> findByTutorIdTutor(Long idTutor);
+
+    boolean existsByCodigoIdentificacao(String codigoIdentificacao);
+
+    boolean existsByCodigoIdentificacaoAndIdPetNot(String codigoIdentificacao, Long idPet);
 }

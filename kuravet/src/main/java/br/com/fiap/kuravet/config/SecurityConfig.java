@@ -37,6 +37,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PATCH, "/api/consultas/*/aprovacao").hasRole("VETERINARIO")
                         .requestMatchers(HttpMethod.PATCH, "/api/consultas/*/recusa").hasRole("VETERINARIO")
                         .requestMatchers(HttpMethod.PATCH, "/api/consultas/*/diagnostico").hasRole("VETERINARIO")
+                        .requestMatchers(HttpMethod.DELETE, "/api/consultas/*").hasRole("VETERINARIO")
 
                         .requestMatchers(HttpMethod.POST, "/api/pets").hasRole("TUTOR")
                         .requestMatchers(HttpMethod.PUT, "/api/pets/*").hasRole("TUTOR")

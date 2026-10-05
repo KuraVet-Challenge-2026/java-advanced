@@ -23,6 +23,7 @@ A aplicação atende dois públicos a partir do mesmo núcleo de regras de negó
 - [API REST](#api-rest)
 - [Tratamento de erros](#tratamento-de-erros)
 - [Estrutura do projeto](#estrutura-do-projeto)
+- [Pipeline CI](#pipeline-ci)
 - [Problemas comuns](#problemas-comuns)
 ---
 
@@ -50,14 +51,18 @@ A aplicação implementa dois fluxos funcionais completos, além do CRUD de apoi
 ### Máquina de estados da consulta
 
 ```
-SOLICITADA ──aprovar──▶ AGENDADA ──diagnóstico──▶ REALIZADA
-     │                      │
-   recusar               cancelar
-     ▼                      ▼
-  RECUSADA              CANCELADA
+SOLICITADA ──aprovar───▶ AGENDADA ──diagnóstico──▶ REALIZADA
+     │    ╲                  │
+   recusar  ╲cancelar      cancelar
+     ▼        ╲               ▼
+  RECUSADA      ╲────────▶ CANCELADA
 ```
 
 `REALIZADA`, `RECUSADA` e `CANCELADA` são estados terminais. Qualquer transição fora deste mapa é rejeitada com `400 Bad Request` e a mensagem `Transicao de status invalida: X -> Y`.
+
+**Cancelamento tem regra própria por perfil** (`ConsultaService.podeCancelar`, único ponto de decisão — reaproveitado pelo portal para exibir ou não o botão):
+- **TUTOR** cancela `SOLICITADA` ou `AGENDADA`, e só as **próprias** consultas (ownership de `buscarPorId`; consulta de outro tutor responde `404`).
+- **VETERINARIO** cancela apenas `AGENDADA`. Uma solicitação ainda pendente (`SOLICITADA`) deve ser **recusada com motivo**, nunca cancelada — a tentativa responde `400` com `Solicitacoes pendentes devem ser recusadas com um motivo.`.
 
 ### Fluxo 1 — Aprovação de teleconsulta
 
@@ -69,6 +74,10 @@ SOLICITADA ──aprovar──▶ AGENDADA ──diagnóstico──▶ REALIZADA
 ### Fluxo 2 — Realização e emissão de diagnóstico
 
 O veterinário abre uma consulta `AGENDADA` no portal e registra o diagnóstico (entre 15 e 400 caracteres). A consulta passa a `REALIZADA` e não pode mais ser alterada. Uma consulta ainda `SOLICITADA` ou já `RECUSADA` nunca vira atendimento.
+
+### Exclusão física de consultas
+
+`DELETE /api/consultas/{id}` exige perfil `VETERINARIO` (um `TUTOR` recebe `403`) e nunca apaga uma consulta `REALIZADA` — ela faz parte do histórico clínico e a tentativa responde `400` com `Consultas realizadas fazem parte do historico clinico e nao podem ser excluidas.`. Para os demais estados, a exclusão é física e definitiva; quem precisa encerrar o fluxo sem apagar histórico deve usar o cancelamento.
 
 ### Regras espelhadas no schema
 
@@ -82,6 +91,7 @@ As regras não vivem apenas no Java. O banco garante as mesmas invariantes por *
 | `KV_CK_USU_PERFIL` | perfil ∈ {TUTOR, VETERINARIO} |
 | `KV_CK_USU_TUTOR` | `ID_TUTOR` é obrigatório quando o perfil é TUTOR e proibido quando é VETERINARIO |
 | `KV_CK_PET_SEXO` | sexo ∈ {M, F} |
+| `KV_UQ_PET_CODIGO` | `CODIGO_IDENTIFICACAO` é único quando preenchido (campo opcional — aceita múltiplos `NULL`) |
  
 ---
 
@@ -181,6 +191,7 @@ O schema é criado e versionado automaticamente na inicialização, a partir de 
 | `V3__seed_tutor_inicial.sql` | Tutor inicial e seu usuário de perfil TUTOR |
 | `V4__consulta_teleconsulta.sql` | Amplia a máquina de estados: status `SOLICITADA` e `RECUSADA`, colunas `DATA_SOLICITACAO` e `MOTIVO_RECUSA`, novas CHECK constraints |
 | `V5__seed_pets_e_consultas.sql` | Pets e consultas cobrindo todos os estados do fluxo |
+| `V6__pet_codigo_identificacao.sql` | Coluna opcional `CODIGO_IDENTIFICACAO` em PET (código da Petz, microchip etc.), única quando preenchida |
 
 Nenhum script precisa ser executado à mão: basta iniciar a aplicação apontando para um schema Oracle válido.
 
@@ -275,9 +286,9 @@ Base: `http://localhost:8080/api`. Todas as rotas exigem HTTP Basic, exceto `/ap
 | `PATCH` | `/api/consultas/{id}/aprovacao` | VETERINARIO | Aprova a solicitação |
 | `PATCH` | `/api/consultas/{id}/recusa` | VETERINARIO | Recusa com justificativa |
 | `PATCH` | `/api/consultas/{id}/diagnostico` | VETERINARIO | Emite diagnóstico e encerra |
-| `PATCH` | `/api/consultas/{id}/cancelamento` | autenticado | Cancela consulta agendada |
+| `PATCH` | `/api/consultas/{id}/cancelamento` | autenticado | Cancela: TUTOR só a própria `SOLICITADA`/`AGENDADA`; VETERINARIO só `AGENDADA` |
 | `PUT` | `/api/consultas/{id}` | autenticado | Atualiza pet, veterinário, data ou tipo |
-| `DELETE` | `/api/consultas/{id}` | autenticado | Exclui consulta |
+| `DELETE` | `/api/consultas/{id}` | VETERINARIO | Exclui consulta (bloqueado para `REALIZADA`, que fica no histórico clínico) |
 
 ### Exemplo — autocadastro do tutor (app mobile)
 
@@ -334,6 +345,49 @@ Resposta `200 OK`:
 ```
 
 `idTutor`/`nomeTutor` vêm `null` quando `perfil` é `VETERINARIO`. Credencial ausente ou inválida responde `401` puro — é esse status que o app usa para decidir se o login falhou.
+
+### Exemplo — cadastrar pet (app mobile)
+
+`codigoIdentificacao` é **opcional e aditivo**: requisições antigas, sem o campo, continuam funcionando normalmente.
+
+```http
+POST /api/pets
+Authorization: Basic dHV0b3I6dHV0b3IxMjM=
+Content-Type: application/json
+
+{
+  "nome": "Bidu",
+  "especie": "Cachorro",
+  "raca": "Vira-lata",
+  "dataNascimento": "2022-01-01",
+  "sexo": "M",
+  "codigoIdentificacao": " pz-123 "
+}
+```
+
+Resposta `201 Created` (o código é normalizado — espaços nas pontas removidos e letras maiúsculas):
+
+```json
+{
+  "idPet": 12,
+  "nome": "Bidu",
+  "especie": "Cachorro",
+  "raca": "Vira-lata",
+  "dataNascimento": "2022-01-01",
+  "sexo": "M",
+  "idTutor": 1,
+  "nomeTutor": "Ana Paula Ferreira",
+  "codigoIdentificacao": "PZ-123"
+}
+```
+
+Se `codigoIdentificacao` já estiver em uso por outro pet, a resposta é `400 Bad Request`:
+
+```json
+{
+  "mensagem": "Ja existe um pet cadastrado com o codigo de identificacao PZ-123."
+}
+```
 
 ### Exemplo — solicitar teleconsulta
 
@@ -443,6 +497,18 @@ kuravet/
         ├── static/css/              # Folha de estilo do portal
         └── templates/               # Views Thymeleaf
 ```
+ 
+---
+
+## Pipeline CI
+
+O pipeline de integração contínua roda no **Azure DevOps** e está definido em [`azure-pipelines.yml`](../azure-pipelines.yml), na raiz do repositório.
+
+- **O que dispara:** todo push na branch `master` e todo pull request direcionado a ela.
+- **O que roda:** em um agente `ubuntu-latest` com JDK 21, executa `./mvnw -B clean verify` (compilação + testes, sem necessidade de Oracle), com cache do repositório Maven. Os relatórios JUnit do Surefire são publicados na aba **Tests** da execução, e testes com falha reprovam o pipeline.
+- **Artefato:** o jar executável do Spring Boot é publicado como `kuravet.jar` no artefato de pipeline **`kuravet-jar`**.
+
+O deploy (CD) não faz parte deste pipeline por enquanto.
  
 ---
 

@@ -1,0 +1,76 @@
+# Pipeline CI do backend KuraVet (Spring Boot / Java 21).
+# O projeto Maven fica em kuravet/; este arquivo fica na raiz do repositorio.
+
+trigger:
+  branches:
+    include:
+      - master
+
+pr:
+  branches:
+    include:
+      - master
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  MAVEN_CACHE_FOLDER: $(Pipeline.Workspace)/.m2/repository
+  MAVEN_OPTS: '-Dmaven.repo.local=$(MAVEN_CACHE_FOLDER)'
+
+stages:
+  - stage: CI
+    displayName: "Build e testes"
+    jobs:
+      - job: BuildETestes
+        displayName: "Build, testes e publicacao do artefato"
+        steps:
+          - task: JavaToolInstaller@0
+            displayName: "Instalar JDK 21"
+            inputs:
+              versionSpec: '21'
+              jdkArchitectureOption: x64
+              jdkSourceOption: PreInstalled
+
+          - task: Cache@2
+            displayName: "Restaurar cache do repositorio Maven"
+            inputs:
+              key: 'maven | "$(Agent.OS)" | kuravet/pom.xml'
+              path: $(MAVEN_CACHE_FOLDER)
+
+          - bash: chmod +x mvnw && ./mvnw -B clean verify
+            displayName: "Compilar e rodar os testes (mvnw)"
+            workingDirectory: kuravet
+
+          - task: PublishTestResults@2
+            displayName: "Publicar resultados dos testes"
+            condition: succeededOrFailed()
+            inputs:
+              testResultsFormat: JUnit
+              testResultsFiles: 'kuravet/target/surefire-reports/TEST-*.xml'
+              failTaskOnFailedTests: true
+              testRunTitle: "KuraVet - testes unitarios"
+
+          - bash: |
+              set -euo pipefail
+              shopt -s nullglob
+              jars=()
+              for jar in kuravet/target/kuravet-*.jar; do
+                jars+=("$jar")
+              done
+              if [ "${#jars[@]}" -ne 1 ]; then
+                echo "##vso[task.logissue type=error]Esperado exatamente 1 jar executavel em kuravet/target, encontrados: ${#jars[@]}"
+                printf '%s\n' "${jars[@]}"
+                exit 1
+              fi
+              cp "${jars[0]}" "$(Build.ArtifactStagingDirectory)/kuravet.jar"
+              echo "Jar copiado: ${jars[0]} -> kuravet.jar"
+            displayName: "Copiar jar executavel para a area de publicacao"
+
+          - task: PublishPipelineArtifact@1
+            displayName: "Publicar artefato kuravet-jar"
+            inputs:
+              targetPath: $(Build.ArtifactStagingDirectory)/kuravet.jar
+              artifact: kuravet-jar
+
+# Stage CD (deploy no Azure Web App): tarefa T5

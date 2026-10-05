@@ -12,7 +12,8 @@ public record PetResponseDTO(
         LocalDate dataNascimento,
         Character sexo,
         Long idTutor,
-        String nomeTutor
+        String nomeTutor,
+        String codigoIdentificacao
 ) {
 
     public static PetResponseDTO fromEntity(Pet pet) {
@@ -24,7 +25,8 @@ public record PetResponseDTO(
                 pet.getDataNascimento(),
                 pet.getSexo(),
                 pet.getTutor().getIdTutor(),
-                pet.getTutor().getNome()
+                pet.getTutor().getNome(),
+                pet.getCodigoIdentificacao()
         );
     }
 }

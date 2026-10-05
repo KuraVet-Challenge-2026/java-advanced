@@ -66,6 +66,16 @@
                 </select>
                 <p class="erro-campo" th:if="${#fields.hasErrors('sexo')}" th:errors="*{sexo}"></p>
             </div>
+
+            <div>
+                <label for="codigoIdentificacao">Codigo de identificacao</label>
+                <input type="text" id="codigoIdentificacao" th:field="*{codigoIdentificacao}"
+                       th:classappend="${#fields.hasErrors('codigoIdentificacao')} ? 'campo-invalido'">
+                <p class="erro-campo" th:if="${#fields.hasErrors('codigoIdentificacao')}" th:errors="*{codigoIdentificacao}"></p>
+                <p class="ajuda" th:unless="${#fields.hasErrors('codigoIdentificacao')}">
+                    Opcional. Ex.: codigo da Petz ou numero do microchip
+                </p>
+            </div>
         </div>
 
         <div class="rodape-form">
