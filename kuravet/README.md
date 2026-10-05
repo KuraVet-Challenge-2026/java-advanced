@@ -23,6 +23,7 @@ A aplicação atende dois públicos a partir do mesmo núcleo de regras de negó
 - [API REST](#api-rest)
 - [Tratamento de erros](#tratamento-de-erros)
 - [Estrutura do projeto](#estrutura-do-projeto)
+- [Pipeline CI](#pipeline-ci)
 - [Problemas comuns](#problemas-comuns)
 ---
 
@@ -496,6 +497,18 @@ kuravet/
         ├── static/css/              # Folha de estilo do portal
         └── templates/               # Views Thymeleaf
 ```
+ 
+---
+
+## Pipeline CI
+
+O pipeline de integração contínua roda no **Azure DevOps** e está definido em [`azure-pipelines.yml`](../azure-pipelines.yml), na raiz do repositório.
+
+- **O que dispara:** todo push na branch `master` e todo pull request direcionado a ela.
+- **O que roda:** em um agente `ubuntu-latest` com JDK 21, executa `./mvnw -B clean verify` (compilação + testes, sem necessidade de Oracle), com cache do repositório Maven. Os relatórios JUnit do Surefire são publicados na aba **Tests** da execução, e testes com falha reprovam o pipeline.
+- **Artefato:** o jar executável do Spring Boot é publicado como `kuravet.jar` no artefato de pipeline **`kuravet-jar`**.
+
+O deploy (CD) não faz parte deste pipeline por enquanto.
  
 ---
 
