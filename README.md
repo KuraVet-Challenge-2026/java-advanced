@@ -498,6 +498,16 @@ Depois que o pipeline publicar a aplicação, ela responde em `https://<defaultH
 ```powershell
 .\99-RemoverRecursos.ps1
 ```
+
+### Pipeline CD
+
+O stage `CD` do [`azure-pipelines.yml`](azure-pipelines.yml) publica a aplicação no Web App `kuravet-rm562396` automaticamente, sem aprovação manual.
+
+- **Quando dispara:** somente depois que o stage `CI` passa em um merge/push na branch `master`. Builds de Pull Request rodam apenas o `CI` (build, testes e artefato) e **nunca** fazem deploy.
+- **De onde vêm os segredos:** `DB_URL`, `DB_USERNAME` e `DB_PASSWORD` ficam no Variable Group **`kuravet-producao`** do Azure DevOps (usuário e senha marcados como secretos). O grupo é declarado apenas no stage `CD`, então o `CI` e os builds de PR não têm acesso a eles. A service connection `sc-kuravet-azure`, o nome do Web App e a URL de health não são sensíveis e ficam no próprio YAML.
+- **O que o deploy faz:** baixa o artefato `kuravet-jar`, renomeia o jar para `app.jar`, aplica as app settings (`DB_URL`, `DB_USERNAME`, `DB_PASSWORD` e `SERVER_PORT=80`, porta para a qual o App Service Linux encaminha as requisições) e publica o jar com runtime `JAVA|21-java21` e o startup command `java -jar /home/site/wwwroot/app.jar`.
+- **Verificação de health:** ao final, o pipeline chama `https://kuravet-rm562396.azurewebsites.net/actuator/health` até 20 vezes, com 15 s de intervalo. O deploy só é considerado bem-sucedido com HTTP 200 e corpo contendo `"UP"`; caso contrário, o stage falha com erro no log. O corpo da resposta não é impresso.
+- **Histórico:** em **Pipelines → Environments → producao** ficam todos os deploys, com o commit e a execução de cada um.
  
 ---
 
