@@ -22,6 +22,7 @@ A aplicação atende dois públicos a partir do mesmo núcleo de regras de negó
 - [Portal web](#portal-web)
 - [API REST](#api-rest)
 - [Tratamento de erros](#tratamento-de-erros)
+- [Triagem por IA — regras](#triagem-por-ia--regras)
 - [Estrutura do projeto](#estrutura-do-projeto)
 - [Pipeline CI](#pipeline-ci)
 - [Problemas comuns](#problemas-comuns)
@@ -469,6 +470,65 @@ Erro de validação inclui o detalhe por campo:
  
 ---
 
+## Triagem por IA — regras
+
+A triagem separa duas responsabilidades:
+
+- **A LLM só extrai sintomas**: lê o relato livre do tutor e devolve um `SintomasExtraidos` (conjunto de `Sintoma` + duração em dias).
+- **O `MotorRegrasTriagem` decide a urgência**: aplica regras determinísticas e auditáveis ao que foi extraído e ao perfil do pet (`PerfilPet`: espécie e idade). A LLM nunca classifica a urgência.
+
+O código fica em `br.com.fiap.kuravet.ia`. O motor percorre uma lista de `RegraTriagem` (código, descrição, urgência e condição) e devolve um `ResultadoTriagem` com a urgência, a recomendação e as regras que justificam a decisão.
+
+Urgências, da menor para a maior: `BAIXA` < `MODERADA` < `ALTA` < `EMERGENCIA`. Filhote = menos de 1 ano; idoso = 10 anos ou mais.
+
+| Regra | Condição | Urgência |
+|-------|----------|----------|
+| R1 | Dificuldade para respirar, convulsão, sangramento, ingestão tóxica ou desmaio | EMERGENCIA |
+| R2 | Gato que não urina (risco de obstrução urinária) | EMERGENCIA |
+| R3 | Não urina, em outras espécies | ALTA |
+| R4 | Vômito e diarreia juntos | ALTA |
+| R5 | Filhote ou idoso com vômito ou diarreia | ALTA |
+| R6 | Febre com apatia | ALTA |
+| R7 | Vômito, diarreia, falta de apetite, apatia, febre, tosse, ferida ou mancando | MODERADA |
+| R8 | Coceira ou espirros | BAIXA |
+| R9 | *Escalonamento:* resultado MODERADA com sintomas há 3 dias ou mais | MODERADA → ALTA |
+| R10 | Nenhuma regra disparou (nenhum sintoma reconhecido) | BAIXA |
+
+**Como a decisão é tomada:**
+
+1. Todas as regras R1–R8 são avaliadas; a urgência final é a **maior** entre as que dispararam.
+2. Se a urgência final for `MODERADA` e a duração for de 3 dias ou mais, ela sobe para `ALTA` (R9).
+3. Se nenhuma regra disparar, o resultado é `BAIXA` com a R10.
+4. `regrasAplicadas` lista todas as regras disparadas no formato `"R4 - vômito e diarreia juntos"`.
+
+**Recomendação por nível:**
+
+| Urgência | Recomendação |
+|----------|--------------|
+| EMERGENCIA | Procure atendimento presencial imediato em um pronto-socorro veterinário. |
+| ALTA | Solicite uma teleconsulta prioritária ainda hoje. |
+| MODERADA | Agende uma teleconsulta nas próximas 48 horas e observe a evolução. |
+| BAIXA | Observe por 48 horas; se surgirem novos sintomas, refaça a triagem. |
+| BAIXA (R10) | Descreva melhor os sintomas ou agende uma teleconsulta de rotina. |
+
+Toda recomendação termina com: *"Esta triagem é orientativa e não substitui a avaliação do veterinário."*
+
+**Exemplos:**
+
+| Sintomas | Pet | Duração | Resultado |
+|----------|-----|---------|-----------|
+| Tosse | cão, 4 anos | 1 dia | MODERADA (R7) |
+| Tosse | cão, 4 anos | 5 dias | ALTA (R7 + R9) |
+| Não urina | gato | — | EMERGENCIA (R2) |
+| Não urina | cão | — | ALTA (R3) |
+| Vômito | filhote | — | ALTA (R5 + R7) |
+| Coceira + convulsão | cão | — | EMERGENCIA (R1 + R8) |
+| (nenhum) | qualquer | — | BAIXA (R10) |
+
+Os cenários estão cobertos em `MotorRegrasTriagemTest` (JUnit 5 puro, sem Spring e sem banco).
+ 
+---
+
 ## Estrutura do projeto
 
 ```
@@ -485,6 +545,7 @@ kuravet/
     │   │       └── form/            # Objetos de vínculo dos formulários
     │   ├── dto/                     # Records de entrada e saída da API
     │   ├── enums/                   # Perfil, StatusConsulta
+    │   ├── ia/                      # Motor de regras da triagem
     │   ├── exception/               # Exceções de negócio
     │   │   └── handler/             # Tratamento global por canal
     │   ├── model/                   # Entidades JPA
