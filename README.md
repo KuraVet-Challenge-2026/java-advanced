@@ -23,6 +23,7 @@ A aplicação atende dois públicos a partir do mesmo núcleo de regras de negó
 - [API REST](#api-rest)
 - [Tratamento de erros](#tratamento-de-erros)
 - [Estrutura do projeto](#estrutura-do-projeto)
+- [Infraestrutura](#infraestrutura)
 - [Problemas comuns](#problemas-comuns)
 ---
 
@@ -443,6 +444,70 @@ kuravet/
         ├── static/css/              # Folha de estilo do portal
         └── templates/               # Views Thymeleaf
 ```
+ 
+---
+
+## Infraestrutura
+
+A aplicação roda em um **Azure Web App Linux com Java 21**. O banco é o **Oracle da FIAP**, externo ao Azure — nenhum banco é criado na nuvem. Os scripts PowerShell ficam em [`infra/`](infra/), na raiz do repositório, ao lado do `azure-pipelines.yml`.
+
+> ⚠️ **O deploy da aplicação é feito exclusivamente pelo pipeline.** Os scripts apenas criam e configuram os recursos; não existe deploy manual. As variáveis `DB_URL`, `DB_USERNAME`, `DB_PASSWORD` e `LLM_API_KEY` vêm do Variable Group do Azure DevOps e são aplicadas no Web App pelo stage de CD — nenhum segredo fica nos scripts nem neste README. Exemplo de `DB_URL` (sem credenciais): `jdbc:oracle:thin:@oracle.fiap.com.br:1521:ORCL`.
+
+### Pré-requisitos
+
+- [Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli) instalada (`az version`).
+- Sessão autenticada na assinatura correta: `az login` (e, se houver mais de uma, `az account set --subscription <id>`).
+- PowerShell, com o diretório atual em `infra/`.
+
+### Ordem de execução
+
+Todos os scripts precisam rodar na **mesma sessão** do PowerShell, porque dependem das variáveis carregadas pelo `00`:
+
+```powershell
+cd infra
+. .\00-Variaveis.ps1          # dot-source: carrega $RG, $LOCAL, $PLANO e $WEBAPP na sessão
+.\01-ResourceGroup.ps1
+.\02-AppServicePlan.ps1
+.\03-WebApp.ps1
+.\04-ConfigurarWebApp.ps1
+```
+
+Se algum script for executado sem o `00` carregado, ele para com a mensagem `Rode primeiro: . .\00-Variaveis.ps1`.
+
+| Script | O que faz |
+|---|---|
+| `00-Variaveis.ps1` | Define os nomes: `rg-kuravet-rm562396`, `plan-kuravet-rm562396`, `kuravet-rm562396` e a região `brazilsouth` (trocar para `mexicocentral` se a política da assinatura bloquear) |
+| `01-ResourceGroup.ps1` | Cria o Resource Group |
+| `02-AppServicePlan.ps1` | Cria o App Service Plan Linux, SKU B1 |
+| `03-WebApp.ps1` | Cria o Web App com runtime `JAVA:21-java21` e ativa HTTPS only |
+| `04-ConfigurarWebApp.ps1` | Liga o Always On e desabilita FTP/FTPS |
+| `99-RemoverRecursos.ps1` | Apaga o Resource Group inteiro, após confirmar digitando o nome dele |
+
+### Validação
+
+```powershell
+az webapp show -g $RG -n $WEBAPP --query state -o tsv                  # esperado: Running
+az webapp show -g $RG -n $WEBAPP --query "{https:httpsOnly, host:defaultHostName}"
+az webapp config show -g $RG -n $WEBAPP --query "{alwaysOn:alwaysOn, ftps:ftpsState, java:linuxFxVersion}"
+```
+
+Depois que o pipeline publicar a aplicação, ela responde em `https://<defaultHostName>/api/ping` com `pong`.
+
+### Remoção
+
+```powershell
+.\99-RemoverRecursos.ps1
+```
+
+### Pipeline CD
+
+O stage `CD` do [`azure-pipelines.yml`](azure-pipelines.yml) publica a aplicação no Web App `kuravet-rm562396` automaticamente, sem aprovação manual.
+
+- **Quando dispara:** somente depois que o stage `CI` passa em um merge/push na branch `master`. Builds de Pull Request rodam apenas o `CI` (build, testes e artefato) e **nunca** fazem deploy.
+- **De onde vêm os segredos:** `DB_URL`, `DB_USERNAME` e `DB_PASSWORD` ficam no Variable Group **`kuravet-producao`** do Azure DevOps (usuário e senha marcados como secretos). O grupo é declarado apenas no stage `CD`, então o `CI` e os builds de PR não têm acesso a eles. A service connection `sc-kuravet-azure`, o nome do Web App e a URL de health não são sensíveis e ficam no próprio YAML.
+- **O que o deploy faz:** baixa o artefato `kuravet-jar`, renomeia o jar para `app.jar`, aplica as app settings (`DB_URL`, `DB_USERNAME`, `DB_PASSWORD` e `SERVER_PORT=80`, porta para a qual o App Service Linux encaminha as requisições) e publica o jar com runtime `JAVA|21-java21` e o startup command `java -jar /home/site/wwwroot/app.jar`.
+- **Verificação de health:** ao final, o pipeline chama `https://kuravet-rm562396.azurewebsites.net/actuator/health` até 20 vezes, com 15 s de intervalo. O deploy só é considerado bem-sucedido com HTTP 200 e corpo contendo `"UP"`; caso contrário, o stage falha com erro no log. O corpo da resposta não é impresso.
+- **Histórico:** em **Pipelines → Environments → producao** ficam todos os deploys, com o commit e a execução de cada um.
  
 ---
 

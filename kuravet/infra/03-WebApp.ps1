@@ -1,1 +1,0 @@
-az webapp create -g $RG --plan $PLANO -n $WEBAPP --runtime "JAVA:21-java21"

@@ -17,6 +17,12 @@ pool:
 variables:
   MAVEN_CACHE_FOLDER: $(Pipeline.Workspace)/.m2/repository
   MAVEN_OPTS: '-Dmaven.repo.local=$(MAVEN_CACHE_FOLDER)'
+  # Valores nao sensiveis do CD. A service connection precisa ser conhecida em
+  # tempo de compilacao, por isso fica aqui e nao no variable group.
+  azureSubscription: 'sc-kuravet-azure'
+  resourceGroup: 'rg-kuravet-rm562396'
+  webAppName: 'kuravet-rm562396'
+  healthUrl: 'https://kuravet-rm562396.azurewebsites.net/actuator/health'
 
 stages:
   - stage: CI
@@ -73,4 +79,69 @@ stages:
               targetPath: $(Build.ArtifactStagingDirectory)/kuravet.jar
               artifact: kuravet-jar
 
-# Stage CD (deploy no Azure Web App): tarefa T5
+  - stage: CD
+    displayName: "Deploy no Azure Web App"
+    dependsOn: CI
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'), ne(variables['Build.Reason'], 'PullRequest'))
+    variables:
+      # Segredos (DB_URL, DB_USERNAME, DB_PASSWORD) so existem neste stage.
+      - group: kuravet-producao
+    jobs:
+      - deployment: DeployWebApp
+        displayName: "Deploy do jar no Web App"
+        environment: 'producao'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - download: current
+                  artifact: kuravet-jar
+                  displayName: "Baixar artefato kuravet-jar"
+
+                - bash: |
+                    set -euo pipefail
+                    mv "$(Pipeline.Workspace)/kuravet-jar/kuravet.jar" "$(Pipeline.Workspace)/kuravet-jar/app.jar"
+                    echo "Jar renomeado para app.jar"
+                  displayName: "Renomear jar para app.jar"
+
+                - task: AzureAppServiceSettings@1
+                  displayName: "Aplicar configuracoes do Web App"
+                  inputs:
+                    azureSubscription: ${{ variables.azureSubscription }}
+                    appName: $(webAppName)
+                    resourceGroupName: $(resourceGroup)
+                    # O App Service Linux encaminha as requisicoes para a porta 80;
+                    # SERVER_PORT faz o Spring Boot escutar nela.
+                    appSettings: |
+                      [
+                        { "name": "DB_URL", "value": "$(DB_URL)", "slotSetting": false },
+                        { "name": "DB_USERNAME", "value": "$(DB_USERNAME)", "slotSetting": false },
+                        { "name": "DB_PASSWORD", "value": "$(DB_PASSWORD)", "slotSetting": false },
+                        { "name": "SERVER_PORT", "value": "80", "slotSetting": false }
+                      ]
+
+                - task: AzureWebApp@1
+                  displayName: "Publicar app.jar no Web App"
+                  inputs:
+                    azureSubscription: ${{ variables.azureSubscription }}
+                    appType: webAppLinux
+                    appName: $(webAppName)
+                    package: $(Pipeline.Workspace)/kuravet-jar/app.jar
+                    runtimeStack: 'JAVA|21-java21'
+                    startUpCommand: 'java -jar /home/site/wwwroot/app.jar'
+
+                - bash: |
+                    set -uo pipefail
+                    corpo="$(mktemp)"
+                    for tentativa in $(seq 1 20); do
+                      status="$(curl -s -o "$corpo" -w '%{http_code}' --max-time 10 "$(healthUrl)" || true)"
+                      if [ "$status" = "200" ] && grep -q '"UP"' "$corpo"; then
+                        echo "Health OK (HTTP 200, status UP) na tentativa $tentativa"
+                        exit 0
+                      fi
+                      echo "Tentativa $tentativa/20: HTTP $status, aguardando 15 s..."
+                      sleep 15
+                    done
+                    echo "##vso[task.logissue type=error]Health check falhou: $(healthUrl) nao respondeu HTTP 200 com status UP apos 20 tentativas"
+                    exit 1
+                  displayName: "Verificar /actuator/health"
