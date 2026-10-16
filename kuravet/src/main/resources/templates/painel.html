@@ -6,13 +6,14 @@
 <header th:replace="~{layout :: topo('painel')}"></header>
 
 <main>
-    <h1>Painel da clinica</h1>
-    <p class="legenda">Visao geral das teleconsultas em cada etapa do fluxo.</p>
+    <!-- Texto alterado na demonstração de CI/CD -->
+    <h1 th:text="'Painel da Clínica KuraVet'">Painel da Clínica KuraVet</h1>
+    <p class="legenda">Visão geral das teleconsultas em cada etapa do fluxo.</p>
 
     <div class="indicadores">
         <a class="indicador" th:href="@{/portal/solicitacoes}">
             <div class="numero" th:text="${totalSolicitadas}">0</div>
-            <div class="rotulo">Aguardando aprovacao</div>
+            <div class="rotulo">Aguardando aprovação</div>
         </a>
         <a class="indicador" th:href="@{/portal/consultas(status='AGENDADA')}">
             <div class="numero" th:text="${totalAgendadas}">0</div>
@@ -32,14 +33,14 @@
     <div class="quadro" style="padding:20px">
         <p style="margin:0 0 8px">
             O tutor solicita a teleconsulta pelo aplicativo. O pedido chega aqui como
-            <span class="selo selo-SOLICITADA">SOLICITADA</span> e aguarda sua decisao.
+            <span class="selo selo-SOLICITADA">SOLICITADA</span> e aguarda sua decisão.
         </p>
         <p style="margin:0 0 8px">
             Ao aprovar, vira <span class="selo selo-AGENDADA">AGENDADA</span>; ao recusar,
-            <span class="selo selo-RECUSADA">RECUSADA</span> com o motivo registrado e visivel ao tutor.
+            <span class="selo selo-RECUSADA">RECUSADA</span> com o motivo registrado e visível ao tutor.
         </p>
         <p style="margin:0">
-            Depois do atendimento, o diagnostico encerra a consulta como
+            Depois do atendimento, o diagnóstico encerra a consulta como
             <span class="selo selo-REALIZADA">REALIZADA</span>.
         </p>
     </div>

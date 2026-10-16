@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{layout :: cabeca('Pet')}"></head>
+<head th:replace="~{layout :: cabeca(${edicao ? 'Editar pet' : 'Cadastrar pet'})}"></head>
 <body>
 
 <header th:replace="~{layout :: topo('pets')}"></header>
 
 <main>
     <h1 th:text="${edicao} ? 'Editar pet' : 'Cadastrar pet'">Pet</h1>
-    <p class="legenda">Os campos marcados sao obrigatorios.</p>
+    <p class="legenda">Campos marcados com * são obrigatórios.</p>
 
     <form class="formulario" method="post" th:object="${petForm}"
           th:action="${edicao}
@@ -16,14 +16,14 @@
 
         <div class="grade-form">
             <div>
-                <label for="nome">Nome</label>
+                <label for="nome">Nome *</label>
                 <input type="text" id="nome" th:field="*{nome}"
                        th:classappend="${#fields.hasErrors('nome')} ? 'campo-invalido'">
                 <p class="erro-campo" th:if="${#fields.hasErrors('nome')}" th:errors="*{nome}"></p>
             </div>
 
             <div>
-                <label for="idTutor">Tutor responsavel</label>
+                <label for="idTutor">Tutor responsável *</label>
                 <select id="idTutor" th:field="*{idTutor}"
                         th:classappend="${#fields.hasErrors('idTutor')} ? 'campo-invalido'">
                     <option value="">Selecione...</option>
@@ -35,7 +35,7 @@
             </div>
 
             <div>
-                <label for="especie">Especie</label>
+                <label for="especie">Espécie *</label>
                 <input type="text" id="especie" th:field="*{especie}"
                        th:classappend="${#fields.hasErrors('especie')} ? 'campo-invalido'"
                        placeholder="Cachorro, Gato...">
@@ -43,44 +43,44 @@
             </div>
 
             <div>
-                <label for="raca">Raca</label>
+                <label for="raca">Raça</label>
                 <input type="text" id="raca" th:field="*{raca}"
                        th:classappend="${#fields.hasErrors('raca')} ? 'campo-invalido'">
                 <p class="erro-campo" th:if="${#fields.hasErrors('raca')}" th:errors="*{raca}"></p>
             </div>
 
             <div>
-                <label for="dataNascimento">Data de nascimento</label>
+                <label for="dataNascimento">Data de nascimento *</label>
                 <input type="date" id="dataNascimento" th:field="*{dataNascimento}"
                        th:classappend="${#fields.hasErrors('dataNascimento')} ? 'campo-invalido'">
                 <p class="erro-campo" th:if="${#fields.hasErrors('dataNascimento')}" th:errors="*{dataNascimento}"></p>
             </div>
 
             <div>
-                <label for="sexo">Sexo</label>
+                <label for="sexo">Sexo *</label>
                 <select id="sexo" th:field="*{sexo}"
                         th:classappend="${#fields.hasErrors('sexo')} ? 'campo-invalido'">
                     <option value="">Selecione...</option>
                     <option value="M">Macho</option>
-                    <option value="F">Femea</option>
+                    <option value="F">Fêmea</option>
                 </select>
                 <p class="erro-campo" th:if="${#fields.hasErrors('sexo')}" th:errors="*{sexo}"></p>
             </div>
 
             <div>
-                <label for="codigoIdentificacao">Codigo de identificacao</label>
+                <label for="codigoIdentificacao">Código de identificação</label>
                 <input type="text" id="codigoIdentificacao" th:field="*{codigoIdentificacao}"
                        th:classappend="${#fields.hasErrors('codigoIdentificacao')} ? 'campo-invalido'">
                 <p class="erro-campo" th:if="${#fields.hasErrors('codigoIdentificacao')}" th:errors="*{codigoIdentificacao}"></p>
                 <p class="ajuda" th:unless="${#fields.hasErrors('codigoIdentificacao')}">
-                    Opcional. Ex.: codigo da Petz ou numero do microchip
+                    Opcional. Ex.: código da Petz ou número do microchip.
                 </p>
             </div>
         </div>
 
         <div class="rodape-form">
             <button type="submit" class="botao botao-principal"
-                    th:text="${edicao} ? 'Salvar alteracoes' : 'Cadastrar'">Salvar</button>
+                    th:text="${edicao} ? 'Salvar alterações' : 'Cadastrar'">Salvar</button>
             <a class="botao botao-secundario" th:href="@{/portal/pets}">Cancelar</a>
         </div>
     </form>

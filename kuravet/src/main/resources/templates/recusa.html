@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{layout :: cabeca('Recusar solicitacao')}"></head>
+<head th:replace="~{layout :: cabeca('Recusar solicitação')}"></head>
 <body>
 
 <header th:replace="~{layout :: topo('solicitacoes')}"></header>
 
 <main>
-    <h1>Recusar solicitacao</h1>
+    <h1>Recusar solicitação</h1>
     <p class="legenda">
         Teleconsulta de <strong th:text="${consulta.pet.nome}">Pet</strong>,
         solicitada por <span th:text="${consulta.pet.tutor.nome}">Tutor</span>
@@ -19,11 +19,11 @@
         <label for="motivo">Motivo da recusa</label>
         <textarea id="motivo" th:field="*{motivo}"
                   th:classappend="${#fields.hasErrors('motivo')} ? 'campo-invalido'"
-                  placeholder="Explique ao tutor por que o atendimento remoto nao e adequado neste caso."></textarea>
+                  placeholder="Explique ao tutor por que o atendimento remoto não é adequado neste caso."></textarea>
 
         <p class="erro-campo" th:if="${#fields.hasErrors('motivo')}" th:errors="*{motivo}"></p>
         <p class="ajuda" th:unless="${#fields.hasErrors('motivo')}">
-            Entre 10 e 300 caracteres. O tutor vera esta mensagem no aplicativo.
+            Entre 10 e 300 caracteres. O tutor verá esta mensagem no aplicativo.
         </p>
 
         <div class="rodape-form">

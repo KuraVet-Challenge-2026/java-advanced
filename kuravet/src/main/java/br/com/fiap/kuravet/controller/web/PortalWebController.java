@@ -85,7 +85,7 @@ public class PortalWebController {
 
         Consulta consulta = consultaService.recusarSolicitacao(id, form.getMotivo());
         redirect.addFlashAttribute("sucesso",
-                "Solicitacao de " + consulta.getPet().getNome() + " recusada, com o motivo registrado.");
+                "Solicitação de " + consulta.getPet().getNome() + " recusada, com o motivo registrado.");
         return "redirect:/portal/solicitacoes";
     }
 
@@ -133,7 +133,7 @@ public class PortalWebController {
         }
 
         consultaService.realizarConsultaComDiagnostico(id, form.getDiagnostico());
-        redirect.addFlashAttribute("sucesso", "Diagnostico registrado. Consulta encerrada.");
+        redirect.addFlashAttribute("sucesso", "Diagnóstico registrado. Consulta encerrada.");
         return "redirect:/portal/consultas/" + id;
     }
 }

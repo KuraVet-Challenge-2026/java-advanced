@@ -65,6 +65,8 @@ tbody tr:hover { background: #fbfdfe; }
 td a { color: var(--verde); }
 
 .vazio { padding: 40px 16px; text-align: center; color: var(--tinta-suave); }
+.vazio strong { display: block; color: var(--tinta); font-size: 1rem; margin-bottom: 4px; }
+.vazio p { margin: 0 auto 16px; max-width: 520px; }
 
 /* ----- selo de status ----- */
 .selo { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: .74rem; font-weight: 600; letter-spacing: .03em; }

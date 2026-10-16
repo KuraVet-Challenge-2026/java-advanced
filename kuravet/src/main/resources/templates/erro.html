@@ -1,14 +1,14 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{layout :: cabeca('Erro')}"></head>
+<head th:replace="~{layout :: cabeca('Operação não permitida')}"></head>
 <body>
 
-<header th:replace="~{layout :: topo('')}"></header>
+<th:block th:replace="~{layout :: topo-erro}"></th:block>
 
 <main>
-    <h1 th:text="${titulo}">Algo deu errado</h1>
-    <p class="aviso aviso-erro" th:text="${mensagem}">Detalhe do erro.</p>
-    <a class="botao botao-secundario" th:href="@{/portal/painel}">Voltar ao painel</a>
+    <h1 th:text="${titulo} ?: 'Operação não permitida'">Operação não permitida</h1>
+    <p class="aviso aviso-erro" th:text="${mensagem} ?: 'Não foi possível concluir a operação.'">Detalhe do erro.</p>
+    <div th:replace="~{layout :: voltar-perfil}"></div>
 </main>
 
 </body>

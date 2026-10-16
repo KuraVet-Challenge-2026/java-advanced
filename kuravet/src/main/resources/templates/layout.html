@@ -17,7 +17,7 @@
         <nav class="menu">
             <a th:href="@{/portal/painel}" th:classappend="${pagina == 'painel'} ? 'ativo'">Painel</a>
             <a th:href="@{/portal/pets}" th:classappend="${pagina == 'pets'} ? 'ativo'">Pets</a>
-            <a th:href="@{/portal/solicitacoes}" th:classappend="${pagina == 'solicitacoes'} ? 'ativo'">Solicitacoes</a>
+            <a th:href="@{/portal/solicitacoes}" th:classappend="${pagina == 'solicitacoes'} ? 'ativo'">Solicitações</a>
             <a th:href="@{/portal/consultas}" th:classappend="${pagina == 'consultas'} ? 'ativo'">Consultas</a>
         </nav>
         <div class="usuario">
@@ -31,6 +31,21 @@
 
 <div th:fragment="aviso">
     <p class="aviso aviso-sucesso" th:if="${sucesso}" th:text="${sucesso}"></p>
+</div>
+
+<!-- Paginas de erro: o menu so aparece para quem tem acesso ao portal. -->
+<th:block th:fragment="topo-erro">
+    <th:block sec:authorize="hasRole('VETERINARIO')">
+        <header th:replace="~{layout :: topo('')}"></header>
+    </th:block>
+</th:block>
+
+<!-- Link de retorno para a area do perfil de quem esta vendo a pagina de erro. -->
+<div th:fragment="voltar-perfil" class="acoes">
+    <a sec:authorize="hasRole('VETERINARIO')" class="botao botao-principal"
+       th:href="@{/portal/painel}">Voltar ao painel</a>
+    <a sec:authorize="!hasRole('VETERINARIO')" class="botao botao-principal"
+       th:href="@{/login}">Ir para o login do portal</a>
 </div>
 
 </body>

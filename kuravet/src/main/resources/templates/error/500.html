@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout :: cabeca('Erro inesperado')}"></head>
+<body>
+
+<th:block th:replace="~{layout :: topo-erro}"></th:block>
+
+<main>
+    <!-- Mensagem sempre generica: detalhes tecnicos ficam apenas no log do servidor. -->
+    <h1>Algo deu errado</h1>
+    <p class="legenda">Erro 500</p>
+    <p class="aviso aviso-erro">
+        Não foi possível concluir a operação por um erro inesperado. O erro foi registrado para análise.
+    </p>
+    <p>Tente novamente em alguns instantes. Se o problema continuar, entre em contato com o suporte da KuraVet.</p>
+    <div th:replace="~{layout :: voltar-perfil}"></div>
+</main>
+
+</body>
+</html>

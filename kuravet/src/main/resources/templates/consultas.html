@@ -7,7 +7,7 @@
 
 <main>
     <h1>Consultas</h1>
-    <p class="legenda">Historico completo, filtravel por etapa do fluxo.</p>
+    <p class="legenda">Histórico completo, filtrável por status do fluxo.</p>
 
     <div th:replace="~{layout :: aviso}"></div>
 
@@ -34,8 +34,8 @@
                 <th>#</th>
                 <th>Pet</th>
                 <th>Tutor</th>
-                <th>Veterinario</th>
-                <th>Data</th>
+                <th>Veterinário</th>
+                <th>Data da consulta</th>
                 <th>Tipo</th>
                 <th>Status</th>
             </tr>
@@ -50,8 +50,22 @@
                 <td th:text="${c.tipoConsulta}">Tipo</td>
                 <td><span class="selo" th:classappend="'selo-' + ${c.status}" th:text="${c.status}">STATUS</span></td>
             </tr>
-            <tr th:if="${#lists.isEmpty(consultas)}">
-                <td colspan="7" class="vazio">Nenhuma consulta encontrada com esse filtro.</td>
+            <tr th:if="${#lists.isEmpty(consultas) and statusSelecionado != null}">
+                <td colspan="7" class="vazio">
+                    <strong>Nenhuma consulta com status
+                        <span class="selo" th:classappend="'selo-' + ${statusSelecionado}"
+                              th:text="${statusSelecionado}">STATUS</span>.</strong>
+                    <p>Escolha outro status no filtro acima ou veja o histórico completo.</p>
+                    <a class="botao botao-secundario" th:href="@{/portal/consultas}">Ver todas as consultas</a>
+                </td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(consultas) and statusSelecionado == null}">
+                <td colspan="7" class="vazio">
+                    <strong>Nenhuma consulta registrada ainda.</strong>
+                    <p>As consultas aparecem aqui quando um tutor solicita uma teleconsulta pelo aplicativo
+                        e você aprova o pedido.</p>
+                    <a class="botao botao-secundario" th:href="@{/portal/solicitacoes}">Ver solicitações pendentes</a>
+                </td>
             </tr>
             </tbody>
         </table>

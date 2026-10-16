@@ -82,7 +82,7 @@ public class ConsultaService {
         if (consultaRepository.existsByPetIdPetAndDataConsultaAndStatusIn(
                 pet.getIdPet(), dto.dataConsulta(), ESTADOS_ATIVOS)) {
             throw new RegraDeNegocioException(
-                    "O pet " + pet.getNome() + " ja possui uma consulta ativa em " + dto.dataConsulta() + ".");
+                    "O pet " + pet.getNome() + " já possui uma consulta ativa em " + dto.dataConsulta() + ".");
         }
 
         Consulta solicitacao = Consulta.builder()
@@ -126,10 +126,10 @@ public class ConsultaService {
 
         if (!podeCancelar(principal, consulta)) {
             if (!principal.isTutor() && consulta.getStatus() == StatusConsulta.SOLICITADA) {
-                throw new RegraDeNegocioException("Solicitacoes pendentes devem ser recusadas com um motivo.");
+                throw new RegraDeNegocioException("Solicitações pendentes devem ser recusadas com um motivo.");
             }
             throw new RegraDeNegocioException(
-                    "Transicao de status invalida: " + consulta.getStatus() + " -> " + StatusConsulta.CANCELADA + ".");
+                    "Transição de status inválida: " + consulta.getStatus() + " -> " + StatusConsulta.CANCELADA + ".");
         }
 
         consulta.setStatus(StatusConsulta.CANCELADA);
@@ -151,7 +151,7 @@ public class ConsultaService {
         if (consulta.getStatus() != StatusConsulta.SOLICITADA
                 && consulta.getStatus() != StatusConsulta.AGENDADA) {
             throw new RegraDeNegocioException(
-                    "Consulta com status " + consulta.getStatus() + " nao pode mais ser alterada.");
+                    "Consulta com status " + consulta.getStatus() + " não pode mais ser alterada.");
         }
 
         consulta.setPet(buscarPetOuLancar(principal, dto.idPet()));
@@ -168,7 +168,7 @@ public class ConsultaService {
 
         if (consulta.getStatus() == StatusConsulta.REALIZADA) {
             throw new RegraDeNegocioException(
-                    "Consultas realizadas fazem parte do historico clinico e nao podem ser excluidas.");
+                    "Consultas realizadas fazem parte do histórico clínico e não podem ser excluídas.");
         }
 
         consultaRepository.delete(consulta);
@@ -179,7 +179,7 @@ public class ConsultaService {
 
         if (!permitidas.contains(novoStatus)) {
             throw new RegraDeNegocioException(
-                    "Transicao de status invalida: " + consulta.getStatus() + " -> " + novoStatus + ".");
+                    "Transição de status inválida: " + consulta.getStatus() + " -> " + novoStatus + ".");
         }
 
         consulta.setStatus(novoStatus);
@@ -204,6 +204,6 @@ public class ConsultaService {
     private Veterinario buscarVeterinarioOuLancar(Long idVeterinario) {
         return veterinarioRepository.findById(idVeterinario)
                 .orElseThrow(() -> new RegraDeNegocioException(
-                        "Veterinario nao encontrado para o ID: " + idVeterinario));
+                        "Veterinário não encontrado para o ID: " + idVeterinario));
     }
 }

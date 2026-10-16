@@ -17,21 +17,21 @@ public class PetForm {
 
     private Long idPet;
 
-    @NotNull(message = "Selecione o tutor responsavel.")
+    @NotNull(message = "Selecione o tutor responsável.")
     private Long idTutor;
 
-    @NotBlank(message = "O nome do pet e obrigatorio.")
-    @Size(max = 60, message = "O nome deve ter no maximo 60 caracteres.")
+    @NotBlank(message = "O nome do pet é obrigatório.")
+    @Size(max = 60, message = "O nome deve ter no máximo 60 caracteres.")
     private String nome;
 
-    @NotBlank(message = "A especie e obrigatoria.")
-    @Size(max = 30, message = "A especie deve ter no maximo 30 caracteres.")
+    @NotBlank(message = "A espécie é obrigatória.")
+    @Size(max = 30, message = "A espécie deve ter no máximo 30 caracteres.")
     private String especie;
 
-    @Size(max = 60, message = "A raca deve ter no maximo 60 caracteres.")
+    @Size(max = 60, message = "A raça deve ter no máximo 60 caracteres.")
     private String raca;
 
-    @NotNull(message = "A data de nascimento e obrigatoria.")
+    @NotNull(message = "A data de nascimento é obrigatória.")
     @Past(message = "A data de nascimento deve estar no passado.")
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     private LocalDate dataNascimento;
@@ -39,8 +39,8 @@ public class PetForm {
     @NotNull(message = "Informe o sexo do pet.")
     private Character sexo;
 
-    @Size(max = 40, message = "O codigo de identificacao deve ter no maximo 40 caracteres.")
-    @Pattern(regexp = "^[A-Za-z0-9._-]*$", message = "O codigo de identificacao deve conter apenas letras, numeros, ponto, hifen ou underscore.")
+    @Size(max = 40, message = "O código de identificação deve ter no máximo 40 caracteres.")
+    @Pattern(regexp = "^[A-Za-z0-9._-]*$", message = "O código de identificação deve conter apenas letras, números, ponto, hífen ou underscore.")
     private String codigoIdentificacao;
 
     public PetRequestDTO paraDTO() {

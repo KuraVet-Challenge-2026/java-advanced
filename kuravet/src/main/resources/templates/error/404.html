@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout :: cabeca('Página não encontrada')}"></head>
+<body>
+
+<th:block th:replace="~{layout :: topo-erro}"></th:block>
+
+<main>
+    <h1 th:text="${titulo} ?: 'Página não encontrada'">Página não encontrada</h1>
+    <p class="legenda">Erro 404</p>
+    <p class="aviso aviso-erro"
+       th:text="${mensagem} ?: 'O endereço acessado não existe ou o registro foi removido.'">
+        O endereço acessado não existe ou o registro foi removido.
+    </p>
+    <p>Confira o endereço ou volte para a sua área e navegue pelo menu.</p>
+    <div th:replace="~{layout :: voltar-perfil}"></div>
+</main>
+
+</body>
+</html>
