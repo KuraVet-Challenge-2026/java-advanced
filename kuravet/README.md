@@ -193,6 +193,7 @@ O schema é criado e versionado automaticamente na inicialização, a partir de 
 | `V4__consulta_teleconsulta.sql` | Amplia a máquina de estados: status `SOLICITADA` e `RECUSADA`, colunas `DATA_SOLICITACAO` e `MOTIVO_RECUSA`, novas CHECK constraints |
 | `V5__seed_pets_e_consultas.sql` | Pets e consultas cobrindo todos os estados do fluxo |
 | `V6__pet_codigo_identificacao.sql` | Coluna opcional `CODIGO_IDENTIFICACAO` em PET (código da Petz, microchip etc.), única quando preenchida |
+| `V7__triagem.sql` | Tabela TRIAGEM (relato, sintomas, urgência, recomendação, regras aplicadas, método de extração), `SEQ_TRIAGEM` e índice por pet |
 
 Nenhum script precisa ser executado à mão: basta iniciar a aplicação apontando para um schema Oracle válido.
 
@@ -290,6 +291,9 @@ Base: `http://localhost:8080/api`. Todas as rotas exigem HTTP Basic, exceto `/ap
 | `PATCH` | `/api/consultas/{id}/cancelamento` | autenticado | Cancela: TUTOR só a própria `SOLICITADA`/`AGENDADA`; VETERINARIO só `AGENDADA` |
 | `PUT` | `/api/consultas/{id}` | autenticado | Atualiza pet, veterinário, data ou tipo |
 | `DELETE` | `/api/consultas/{id}` | VETERINARIO | Exclui consulta (bloqueado para `REALIZADA`, que fica no histórico clínico) |
+| `POST` | `/api/triagens` | TUTOR | Faz a triagem de um pet próprio a partir do relato livre e grava o resultado |
+| `GET` | `/api/triagens` | autenticado | Lista triagens das mais urgentes para as menos (TUTOR: só as dos próprios pets; VETERINARIO: todas) |
+| `GET` | `/api/triagens/{id}` | autenticado | Busca triagem por ID (TUTOR: só dos próprios pets) |
 
 ### Exemplo — autocadastro do tutor (app mobile)
 
@@ -434,6 +438,43 @@ Content-Type: application/json
   "motivo": "Caso ortopedico exige exame presencial com raio-x."
 }
 ```
+
+### Exemplo — triagem do pet (app mobile)
+
+O tutor descreve os sintomas em texto livre. A API extrai os sintomas, aplica o [motor de regras](#triagem-por-ia--regras) com a espécie e a idade do pet e grava o resultado. O `relato` é obrigatório e deve ter entre 10 e 1000 caracteres; um pet de outro tutor responde `404`.
+
+```http
+POST /api/triagens
+Authorization: Basic dHV0b3I6dHV0b3IxMjM=
+Content-Type: application/json
+ 
+{
+  "idPet": 2,
+  "relato": "Minha gata não faz xixi desde ontem e está apática"
+}
+```
+
+Resposta `201 Created` (header `Location: /api/triagens/1`):
+
+```json
+{
+  "idTriagem": 1,
+  "idPet": 2,
+  "nomePet": "Luna",
+  "urgencia": "EMERGENCIA",
+  "recomendacao": "Procure atendimento presencial imediato em um pronto-socorro veterinário. Esta triagem é orientativa e não substitui a avaliação do veterinário.",
+  "sintomas": ["Apatia", "Não urina"],
+  "regrasAplicadas": [
+    "R2 - gato que não urina (risco de obstrução urinária)",
+    "R7 - sintoma que exige acompanhamento veterinário"
+  ],
+  "metodoExtracao": "PALAVRAS_CHAVE",
+  "dataTriagem": "2026-10-15T21:40:12.345",
+  "sugereTeleconsultaPrioritaria": true
+}
+```
+
+`GET /api/triagens` devolve a mesma estrutura em lista, ordenada por urgência (`EMERGENCIA` → `BAIXA`) e, dentro do mesmo nível, da mais recente para a mais antiga. O relato do tutor é gravado, mas nunca aparece nos logs.
  
 ---
 
