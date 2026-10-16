@@ -97,7 +97,7 @@ public class PetWebController {
 
         Pet pet = petService.buscarPorId(principal, id);
         petService.excluir(principal, id);
-        redirect.addFlashAttribute("sucesso", "Pet " + pet.getNome() + " excluido.");
+        redirect.addFlashAttribute("sucesso", "Pet " + pet.getNome() + " excluído.");
         return "redirect:/portal/pets";
     }
 }

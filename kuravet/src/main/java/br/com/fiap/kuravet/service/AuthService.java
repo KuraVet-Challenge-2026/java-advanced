@@ -35,10 +35,10 @@ public class AuthService {
     @Transactional
     public CadastroResponseDTO cadastrar(CadastroRequestDTO dto) {
         if (usuarioRepository.existsByUsername(dto.username())) {
-            throw new RegraDeNegocioException("Nome de usuario ja em uso.");
+            throw new RegraDeNegocioException("Nome de usuário já em uso.");
         }
         if (tutorRepository.existsByCpf(dto.cpf())) {
-            throw new RegraDeNegocioException("CPF ja cadastrado.");
+            throw new RegraDeNegocioException("CPF já cadastrado.");
         }
 
         Tutor tutor = tutorService.criar(dto.paraTutorDTO());

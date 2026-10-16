@@ -84,7 +84,7 @@ public class PetService {
 
         if (consultaRepository.existsByPetIdPet(id)) {
             throw new RegraDeNegocioException(
-                    "O pet " + pet.getNome() + " possui consultas registradas e nao pode ser excluido.");
+                    "O pet " + pet.getNome() + " possui consultas registradas e não pode ser excluído.");
         }
 
         petRepository.delete(pet);
@@ -118,7 +118,7 @@ public class PetService {
 
         if (duplicado) {
             throw new RegraDeNegocioException(
-                    "Ja existe um pet cadastrado com o codigo de identificacao " + codigoIdentificacao + ".");
+                    "Já existe um pet cadastrado com o código de identificação " + codigoIdentificacao + ".");
         }
     }
 

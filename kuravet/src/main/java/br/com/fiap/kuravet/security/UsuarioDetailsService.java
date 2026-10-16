@@ -18,6 +18,6 @@ public class UsuarioDetailsService implements UserDetailsService {
     public UsuarioPrincipal loadUserByUsername(String username) throws UsernameNotFoundException {
         return usuarioRepository.findByUsername(username)
                 .map(UsuarioPrincipal::new)
-                .orElseThrow(() -> new UsernameNotFoundException("Usuario nao encontrado: " + username));
+                .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado: " + username));
     }
 }

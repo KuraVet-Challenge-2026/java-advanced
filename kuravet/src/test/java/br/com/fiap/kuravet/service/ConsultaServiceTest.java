@@ -307,7 +307,7 @@ class ConsultaServiceTest {
         RegraDeNegocioException excecao = assertThrows(RegraDeNegocioException.class,
                 () -> consultaService.cancelar(principalVeterinario(), 1L));
 
-        assertThat(excecao.getMessage()).isEqualTo("Solicitacoes pendentes devem ser recusadas com um motivo.");
+        assertThat(excecao.getMessage()).isEqualTo("Solicitações pendentes devem ser recusadas com um motivo.");
         verify(consultaRepository, never()).save(any());
     }
 

@@ -10,23 +10,23 @@ import java.time.LocalDate;
 
 public record PetRequestDTO(
 
-        @NotBlank(message = "O nome do pet e obrigatorio.")
+        @NotBlank(message = "O nome do pet é obrigatório.")
         String nome,
 
-        @NotBlank(message = "A especie do pet e obrigatoria.")
+        @NotBlank(message = "A espécie do pet é obrigatória.")
         String especie,
 
         String raca,
 
-        @NotNull(message = "A data de nascimento e obrigatoria.")
+        @NotNull(message = "A data de nascimento é obrigatória.")
         @Past(message = "A data de nascimento deve estar no passado.")
         LocalDate dataNascimento,
 
-        @NotNull(message = "O sexo do pet e obrigatorio (M ou F).")
+        @NotNull(message = "O sexo do pet é obrigatório (M ou F).")
         Character sexo,
 
-        @Size(max = 40, message = "O codigo de identificacao deve ter no maximo 40 caracteres.")
-        @Pattern(regexp = "^[A-Za-z0-9._-]*$", message = "O codigo de identificacao deve conter apenas letras, numeros, ponto, hifen ou underscore.")
+        @Size(max = 40, message = "O código de identificação deve ter no máximo 40 caracteres.")
+        @Pattern(regexp = "^[A-Za-z0-9._-]*$", message = "O código de identificação deve conter apenas letras, números, ponto, hífen ou underscore.")
         String codigoIdentificacao
 ) {
 }

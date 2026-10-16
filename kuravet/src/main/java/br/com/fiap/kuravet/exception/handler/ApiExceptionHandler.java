@@ -43,7 +43,7 @@ public class ApiExceptionHandler {
             camposInvalidos.put(erro.getField(), erro.getDefaultMessage());
         }
 
-        Map<String, Object> corpo = corpoErro(HttpStatus.BAD_REQUEST, "Erro de validacao nos campos informados.");
+        Map<String, Object> corpo = corpoErro(HttpStatus.BAD_REQUEST, "Erro de validação nos campos informados.");
         corpo.put("campos", camposInvalidos);
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(corpo);
