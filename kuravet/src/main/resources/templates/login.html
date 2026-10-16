@@ -6,18 +6,18 @@
 <div class="tela-login">
     <div class="caixa-login">
         <a class="marca">KuraVet</a>
-        <p class="legenda">Portal da clinica</p>
+        <p class="legenda">Portal da clínica</p>
 
         <p class="aviso aviso-erro" th:if="${param.error}">
-            Usuario ou senha invalidos.
+            Usuário ou senha inválidos.
         </p>
         <p class="aviso aviso-sucesso" th:if="${param.logout}">
-            Sessao encerrada com seguranca.
+            Sessão encerrada com segurança.
         </p>
 
         <form class="formulario" th:action="@{/login}" method="post">
             <div class="campo">
-                <label for="username">Usuario</label>
+                <label for="username">Usuário</label>
                 <input type="text" id="username" name="username" autofocus required>
             </div>
             <div class="campo">
@@ -28,7 +28,7 @@
         </form>
 
         <p class="credenciais">
-            Acesso restrito ao perfil VETERINARIO.<br>
+            Acesso restrito a veterinários.<br>
             Tutores usam o aplicativo KuraVet.
         </p>
     </div>

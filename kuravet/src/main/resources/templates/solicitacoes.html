@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{layout :: cabeca('Solicitacoes')}"></head>
+<head th:replace="~{layout :: cabeca('Solicitações')}"></head>
 <body>
 
 <header th:replace="~{layout :: topo('solicitacoes')}"></header>
 
 <main>
-    <h1>Solicitacoes de teleconsulta</h1>
-    <p class="legenda">Pedidos enviados pelos tutores, aguardando aprovacao.</p>
+    <h1>Solicitações de teleconsulta</h1>
+    <p class="legenda">Pedidos enviados pelos tutores pelo aplicativo, aguardando aprovação.</p>
 
     <div th:replace="~{layout :: aviso}"></div>
 
@@ -17,11 +17,11 @@
             <tr>
                 <th>Pet</th>
                 <th>Tutor</th>
-                <th>Veterinario</th>
-                <th>Solicitado em</th>
-                <th>Data desejada</th>
+                <th>Veterinário</th>
+                <th>Solicitada em</th>
+                <th>Data da consulta</th>
                 <th>Tipo</th>
-                <th>Acoes</th>
+                <th>Ações</th>
             </tr>
             </thead>
             <tbody>
@@ -43,7 +43,13 @@
                 </td>
             </tr>
             <tr th:if="${#lists.isEmpty(solicitacoes)}">
-                <td colspan="7" class="vazio">Nenhuma solicitacao pendente no momento.</td>
+                <td colspan="7" class="vazio">
+                    <strong>Nenhuma solicitação aguardando aprovação.</strong>
+                    <p>Novos pedidos feitos pelos tutores no aplicativo aparecem aqui automaticamente.
+                        Enquanto isso, acompanhe as consultas já agendadas.</p>
+                    <a class="botao botao-secundario"
+                       th:href="@{/portal/consultas(status='AGENDADA')}">Ver consultas agendadas</a>
+                </td>
             </tr>
             </tbody>
         </table>

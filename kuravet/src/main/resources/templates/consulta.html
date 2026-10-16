@@ -25,7 +25,7 @@
                 <dd th:text="${consulta.pet.tutor.nome}">Tutor</dd>
             </div>
             <div>
-                <dt>Veterinario</dt>
+                <dt>Veterinário</dt>
                 <dd th:text="${consulta.veterinario.nome}">Vet</dd>
             </div>
             <div>
@@ -33,17 +33,17 @@
                 <dd th:text="${#temporals.format(consulta.dataSolicitacao, 'dd/MM/yyyy')}">--</dd>
             </div>
             <div>
-                <dt>Data do atendimento</dt>
+                <dt>Data da consulta</dt>
                 <dd th:text="${#temporals.format(consulta.dataConsulta, 'dd/MM/yyyy')}">--</dd>
             </div>
         </dl>
     </div>
 
-    <!-- Fluxo 1: pendente de decisao -->
+    <!-- Fluxo 1: pendente de decisão -->
     <div th:if="${consulta.status.name() == 'SOLICITADA'}">
-        <h2>Decisao</h2>
+        <h2>Decisão</h2>
         <div class="quadro" style="padding:24px">
-            <p style="margin-top:0">Esta solicitacao ainda aguarda sua aprovacao.</p>
+            <p style="margin-top:0">Esta solicitação ainda aguarda sua aprovação.</p>
             <div class="acoes">
                 <form th:action="@{/portal/solicitacoes/{id}/aprovar(id=${consulta.idConsulta})}" method="post">
                     <button type="submit" class="botao botao-principal">Aprovar e agendar</button>
@@ -54,21 +54,21 @@
         </div>
     </div>
 
-    <!-- Fluxo 2: pronta para receber diagnostico -->
+    <!-- Fluxo 2: pronta para receber diagnóstico -->
     <div th:if="${consulta.status.name() == 'AGENDADA'}">
         <h2>Encerrar atendimento</h2>
         <form class="formulario"
               th:action="@{/portal/consultas/{id}/diagnostico(id=${consulta.idConsulta})}"
               th:object="${diagnosticoForm}" method="post">
 
-            <label for="diagnostico">Diagnostico</label>
+            <label for="diagnostico">Diagnóstico</label>
             <textarea id="diagnostico" th:field="*{diagnostico}"
                       th:classappend="${#fields.hasErrors('diagnostico')} ? 'campo-invalido'"
                       placeholder="Registre o quadro observado, a conduta e o retorno recomendado."></textarea>
 
             <p class="erro-campo" th:if="${#fields.hasErrors('diagnostico')}" th:errors="*{diagnostico}"></p>
             <p class="ajuda" th:unless="${#fields.hasErrors('diagnostico')}">
-                Entre 15 e 400 caracteres. Ao salvar, a consulta passa a REALIZADA e nao pode mais ser alterada.
+                Entre 15 e 400 caracteres. Ao salvar, a consulta passa a REALIZADA e não pode mais ser alterada.
             </p>
 
             <div class="rodape-form">
@@ -80,9 +80,9 @@
 
     <!-- Estados terminais -->
     <div th:if="${consulta.status.name() == 'REALIZADA'}">
-        <h2>Diagnostico emitido</h2>
+        <h2>Diagnóstico emitido</h2>
         <div class="quadro" style="padding:24px">
-            <p style="margin:0" th:text="${consulta.diagnostico}">Diagnostico</p>
+            <p style="margin:0" th:text="${consulta.diagnostico}">Diagnóstico</p>
         </div>
     </div>
 
@@ -92,6 +92,17 @@
             <p style="margin:0" th:text="${consulta.motivoRecusa}">Motivo</p>
         </div>
     </div>
+
+    <div th:if="${consulta.status.name() == 'CANCELADA'}">
+        <h2>Consulta cancelada</h2>
+        <div class="quadro" style="padding:24px">
+            <p style="margin:0">Esta consulta foi cancelada e não exige nenhuma ação.</p>
+        </div>
+    </div>
+
+    <p style="margin-top:24px">
+        <a class="botao botao-secundario" th:href="@{/portal/consultas}">Voltar para consultas</a>
+    </p>
 </main>
 
 </body>
