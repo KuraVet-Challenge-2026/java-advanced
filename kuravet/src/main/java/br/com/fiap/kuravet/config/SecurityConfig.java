@@ -43,6 +43,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/api/pets/*").hasRole("TUTOR")
                         .requestMatchers(HttpMethod.DELETE, "/api/pets/*").hasRole("TUTOR")
 
+                        .requestMatchers(HttpMethod.POST, "/api/triagens").hasRole("TUTOR")
+                        .requestMatchers(HttpMethod.GET, "/api/triagens", "/api/triagens/*").authenticated()
+
                         .anyRequest().authenticated()
                 );
 

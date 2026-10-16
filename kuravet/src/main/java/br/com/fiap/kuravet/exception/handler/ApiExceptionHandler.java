@@ -3,6 +3,7 @@ package br.com.fiap.kuravet.exception.handler;
 import br.com.fiap.kuravet.exception.ConsultaNaoEncontradaException;
 import br.com.fiap.kuravet.exception.PetNaoEncontradoException;
 import br.com.fiap.kuravet.exception.RegraDeNegocioException;
+import br.com.fiap.kuravet.exception.TriagemNaoEncontradaException;
 import br.com.fiap.kuravet.exception.TutorNaoEncontradoException;
 import br.com.fiap.kuravet.exception.VeterinarioNaoEncontradoException;
 import org.springframework.http.HttpStatus;
@@ -23,6 +24,7 @@ public class ApiExceptionHandler {
             ConsultaNaoEncontradaException.class,
             PetNaoEncontradoException.class,
             TutorNaoEncontradoException.class,
+            TriagemNaoEncontradaException.class,
             VeterinarioNaoEncontradoException.class
     })
     public ResponseEntity<Map<String, Object>> handleNaoEncontrado(RuntimeException ex) {
