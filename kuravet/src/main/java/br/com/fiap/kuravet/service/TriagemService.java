@@ -2,9 +2,10 @@ package br.com.fiap.kuravet.service;
 
 import br.com.fiap.kuravet.dto.triagem.TriagemRequestDTO;
 import br.com.fiap.kuravet.exception.TriagemNaoEncontradaException;
-import br.com.fiap.kuravet.ia.ExtratorSintomas;
+import br.com.fiap.kuravet.ia.ExtratorComFallback;
 import br.com.fiap.kuravet.ia.MotorRegrasTriagem;
 import br.com.fiap.kuravet.ia.PerfilPet;
+import br.com.fiap.kuravet.ia.ResultadoExtracao;
 import br.com.fiap.kuravet.ia.ResultadoTriagem;
 import br.com.fiap.kuravet.ia.SintomasExtraidos;
 import br.com.fiap.kuravet.model.Pet;
@@ -34,16 +35,16 @@ public class TriagemService {
 
     private final TriagemRepository triagemRepository;
     private final PetService petService;
-    private final ExtratorSintomas extratorSintomas;
+    private final ExtratorComFallback extrator;
     private final MotorRegrasTriagem motorRegrasTriagem;
 
     public TriagemService(TriagemRepository triagemRepository,
                           PetService petService,
-                          ExtratorSintomas extratorSintomas,
+                          ExtratorComFallback extrator,
                           MotorRegrasTriagem motorRegrasTriagem) {
         this.triagemRepository = triagemRepository;
         this.petService = petService;
-        this.extratorSintomas = extratorSintomas;
+        this.extrator = extrator;
         this.motorRegrasTriagem = motorRegrasTriagem;
     }
 
@@ -52,7 +53,8 @@ public class TriagemService {
         Pet pet = petService.buscarPorId(principal, dto.idPet());
 
         PerfilPet perfil = new PerfilPet(pet.getEspecie(), idadeEmAnos(pet.getDataNascimento()));
-        SintomasExtraidos sintomas = extratorSintomas.extrair(dto.relato());
+        ResultadoExtracao extracao = extrator.extrair(dto.relato());
+        SintomasExtraidos sintomas = extracao.sintomas();
         ResultadoTriagem resultado = motorRegrasTriagem.avaliar(sintomas, perfil);
 
         Triagem triagem = Triagem.builder()
@@ -62,7 +64,7 @@ public class TriagemService {
                 .urgencia(resultado.urgencia())
                 .recomendacao(resultado.recomendacao())
                 .regrasAplicadas(resultado.regrasAplicadas())
-                .metodoExtracao(extratorSintomas.metodo())
+                .metodoExtracao(extracao.metodo())
                 .dataTriagem(LocalDateTime.now())
                 .build();
 
