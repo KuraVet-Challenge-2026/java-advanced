@@ -117,6 +117,7 @@ stages:
                         { "name": "DB_URL", "value": "$(DB_URL)", "slotSetting": false },
                         { "name": "DB_USERNAME", "value": "$(DB_USERNAME)", "slotSetting": false },
                         { "name": "DB_PASSWORD", "value": "$(DB_PASSWORD)", "slotSetting": false },
+                        { "name": "LLM_API_KEY", "value": "$(LLM_API_KEY)", "slotSetting": false },
                         { "name": "SERVER_PORT", "value": "80", "slotSetting": false }
                       ]
 
