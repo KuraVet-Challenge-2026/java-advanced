@@ -23,6 +23,8 @@ A aplicação atende dois públicos a partir do mesmo núcleo de regras de negó
 - [API REST](#api-rest)
 - [Tratamento de erros](#tratamento-de-erros)
 - [Triagem por IA — regras](#triagem-por-ia--regras)
+- [Triagem por IA — LLM e fallback](#triagem-por-ia--llm-e-fallback)
+- [Health check](#health-check)
 - [Estrutura do projeto](#estrutura-do-projeto)
 - [Pipeline CI](#pipeline-ci)
 - [Problemas comuns](#problemas-comuns)
@@ -568,6 +570,52 @@ Toda recomendação termina com: *"Esta triagem é orientativa e não substitui 
 
 Os cenários estão cobertos em `MotorRegrasTriagemTest` (JUnit 5 puro, sem Spring e sem banco).
  
+---
+
+## Triagem por IA — LLM e fallback
+
+A extração de sintomas tenta primeiro o **Google Gemini** e, se ele não estiver disponível, usa o `ExtratorPalavrasChave`. Em nenhum dos casos a LLM decide urgência ou recomendação: isso continua sendo do `MotorRegrasTriagem`.
+
+**Fluxo (`ExtratorComFallback`):**
+
+1. Se `kuravet.ia.llm.enabled=false` ou a chave está vazia, usa palavras-chave, sem nenhuma chamada HTTP.
+2. Caso contrário, chama o Gemini (`ExtratorGemini`). Em caso de sucesso, o método registrado é `LLM`.
+3. Qualquer falha (timeout, erro de rede, HTTP diferente de 2xx, resposta bloqueada por segurança, sem `candidates` ou JSON inválido) gera um log `WARN` com o motivo e cai para palavras-chave (`PALAVRAS_CHAVE`).
+
+A coluna `METODO_EXTRACAO` da tabela `TRIAGEM` guarda o método que **realmente** produziu os sintomas. Os logs nunca contêm o relato, a chave nem o corpo da resposta da LLM.
+
+**Configuração** (`application.properties`):
+
+| Propriedade | Padrão | Descrição |
+|-------------|--------|-----------|
+| `kuravet.ia.llm.enabled` | `${LLM_ENABLED:true}` | Liga/desliga a LLM |
+| `kuravet.ia.llm.api-key` | `${LLM_API_KEY:}` | Chave da API (vazia = só palavras-chave) |
+| `kuravet.ia.llm.base-url` | `https://generativelanguage.googleapis.com/v1beta` | URL base da API |
+| `kuravet.ia.llm.model` | `${LLM_MODEL:gemini-2.5-flash}` | Modelo usado |
+| `kuravet.ia.llm.timeout-ms` | `8000` | Timeout de conexão e de leitura |
+
+**Chave da API:** nunca a versione. Localmente, coloque `kuravet.ia.llm.api-key=<sua chave>` no `application-local.properties` (ignorado pelo Git) ou defina a variável de ambiente `LLM_API_KEY`. No deploy, a chave vem do Variable Group `kuravet-producao` (variável secreta `LLM_API_KEY`) e é aplicada como app setting do Web App. A chave segue no header `x-goog-api-key`, nunca na URL.
+
+**Como a resposta é tratada:** a requisição usa temperatura 0 e `responseSchema` com a lista de sintomas (enum de `Sintoma`) e `duracaoDias`. O relato vai delimitado por `<relato></relato>` e a instrução de sistema manda ignorar qualquer instrução dentro dele. Na resposta, sintomas fora do enum são descartados e `duracaoDias` fora de 0..365 vira `null`.
+
+Os testes (`ExtratorGeminiTest` e `ExtratorComFallbackTest`) não usam Spring, banco nem a internet.
+ 
+---
+
+## Health check
+
+`GET /actuator/health` é público (não exige login) e informa se a aplicação e o banco Oracle estão de pé. Em produção: `https://kuravet-rm562396.azurewebsites.net/actuator/health`.
+
+```json
+{ "status": "UP", "components": { "db": { "status": "UP" }, "diskSpace": { "status": "UP" }, "ping": { "status": "UP" } } }
+```
+
+- **`UP`** (HTTP 200): a aplicação respondeu e o banco aceitou a conexão.
+- **`DOWN`** (HTTP 503): algum componente falhou, em geral o banco (credencial, rede ou Oracle fora do ar).
+- Não há detalhes (`show-details=never`): só o status de cada componente, sem URL, usuário ou mensagem de erro do banco.
+- É o único endpoint do Actuator exposto (`management.endpoints.web.exposure.include=health`).
+- O stage `CD` do pipeline chama essa URL após o deploy, até 20 vezes com 15 s de intervalo, e só passa com HTTP 200 e `"UP"` no corpo.
+
 ---
 
 ## Estrutura do projeto

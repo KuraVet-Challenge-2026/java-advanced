@@ -4,9 +4,14 @@ import br.com.fiap.kuravet.dto.triagem.TriagemRequestDTO;
 import br.com.fiap.kuravet.enums.Perfil;
 import br.com.fiap.kuravet.exception.PetNaoEncontradoException;
 import br.com.fiap.kuravet.exception.TriagemNaoEncontradaException;
+import br.com.fiap.kuravet.ia.ExtratorComFallback;
 import br.com.fiap.kuravet.ia.ExtratorPalavrasChave;
 import br.com.fiap.kuravet.ia.MetodoExtracao;
 import br.com.fiap.kuravet.ia.MotorRegrasTriagem;
+import br.com.fiap.kuravet.ia.ResultadoExtracao;
+import br.com.fiap.kuravet.ia.SintomasExtraidos;
+import br.com.fiap.kuravet.ia.llm.ExtratorGemini;
+import br.com.fiap.kuravet.ia.llm.GeminiProperties;
 import br.com.fiap.kuravet.ia.Sintoma;
 import br.com.fiap.kuravet.ia.Urgencia;
 import br.com.fiap.kuravet.model.Pet;
@@ -53,9 +58,11 @@ class TriagemServiceTest {
 
     @BeforeEach
     void setUp() {
-        // Extrator e motor sao deterministicos e sem dependencias: usamos as implementacoes reais.
-        triagemService = new TriagemService(triagemRepository, petService,
-                new ExtratorPalavrasChave(), new MotorRegrasTriagem());
+        // LLM desligada: o extrator cai direto nas palavras-chave, deterministicas e sem rede.
+        GeminiProperties semLlm = new GeminiProperties(false, "", "http://localhost", "modelo", 1000);
+        ExtratorComFallback extrator = new ExtratorComFallback(semLlm,
+                org.mockito.Mockito.mock(ExtratorGemini.class), new ExtratorPalavrasChave());
+        triagemService = new TriagemService(triagemRepository, petService, extrator, new MotorRegrasTriagem());
     }
 
     // ---------- helpers ----------
@@ -134,6 +141,23 @@ class TriagemServiceTest {
         assertThat(salva.getRelato()).isEqualTo("Minha gata não faz xixi desde ontem");
         assertThat(salva.getDataTriagem()).isNotNull();
         assertThat(resultado.getIdTriagem()).isEqualTo(1L);
+    }
+
+    @Test
+    void deveGravarOMetodoRealmenteUsadoNaExtracao() {
+        UsuarioPrincipal tutor = principalTutor(ID_TUTOR_1);
+        Pet gato = pet(2L, ID_TUTOR_1, "Gato", LocalDate.now().minusYears(5));
+        when(petService.buscarPorId(tutor, 2L)).thenReturn(gato);
+        when(triagemRepository.save(any(Triagem.class))).thenAnswer(inv -> inv.getArgument(0));
+        ExtratorComFallback extrator = org.mockito.Mockito.mock(ExtratorComFallback.class);
+        when(extrator.extrair(any())).thenReturn(new ResultadoExtracao(
+                new SintomasExtraidos(Set.of(Sintoma.TOSSE), 1), MetodoExtracao.LLM));
+        TriagemService comLlm = new TriagemService(triagemRepository, petService, extrator, new MotorRegrasTriagem());
+
+        Triagem resultado = comLlm.realizar(tutor, new TriagemRequestDTO(2L, "tosse"));
+
+        assertThat(resultado.getMetodoExtracao()).isEqualTo(MetodoExtracao.LLM);
+        assertThat(resultado.getSintomas()).containsExactly(Sintoma.TOSSE);
     }
 
     @Test
