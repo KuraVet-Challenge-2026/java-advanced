@@ -201,11 +201,14 @@ Nenhum script precisa ser executado à mão: basta iniciar a aplicação apontan
 
 O Hibernate roda com `spring.jpa.hibernate.ddl-auto=validate` — o schema é propriedade do Flyway, e o Hibernate apenas confere se as entidades batem com o que foi criado.
 
-### Regra de ouro
+### Regras de migrations e do schema do backend
 
-**Nunca edite uma migration já aplicada.** O Flyway compara o checksum do arquivo com o que foi executado e se recusa a continuar se houver diferença. Precisa mudar algo? Crie um `V6__`, `V7__` e assim por diante.
+A aplicação **não** repara o histórico do Flyway: uma migration com problema derruba a inicialização com erro explícito, e `spring.flyway.baseline-on-migrate=false` faz um schema sem `flyway_schema_history` falhar em vez de rodar a V1 sobre tabelas existentes.
 
-A aplicação registra um `FlywayMigrationStrategy` que executa `repair()` antes de `migrate()`, de modo que um registro de migration interrompida não impede a inicialização seguinte.
+- **Migrations aplicadas são imutáveis.** O Flyway compara o checksum do arquivo com o que foi executado e se recusa a continuar se houver diferença. Correções sempre entram em uma nova versão (`V8__`, `V9__`...).
+- **Nunca rode `flyway repair` ou `flyway clean`**, nem o script consolidado da disciplina de Banco de Dados (`script_bd.sql`), no schema do backend (RM562396).
+- **Migrations com PL/SQL são testadas antes em um schema sandbox**, apontando `DB_USERNAME`/`DB_PASSWORD` para ele.
+- **Se uma migration falhar:** pare, avise o time e não tente reiniciar a aplicação em loop nem editar o histórico à mão. A correção é feita em uma nova versão, após o time avaliar o estado do schema.
 
 ### Script SQL independente
 
@@ -627,7 +630,7 @@ kuravet/
 └── src/main/
     ├── java/br/com/fiap/kuravet/
     │   ├── KuravetApplication.java
-    │   ├── config/                  # SecurityConfig, CorsConfig, FlywayConfig
+    │   ├── config/                  # SecurityConfig, CorsConfig
     │   ├── controller/
     │   │   ├── api/                 # Endpoints REST do app mobile
     │   │   └── web/                 # Controllers do portal Thymeleaf
@@ -674,10 +677,10 @@ Credenciais incorretas em `application-local.properties`.
 Uma migration já aplicada foi editada. Reverta o arquivo ou crie uma nova versão — nunca altere uma migration aplicada.
 
 **`Detected failed migration to version N`**
-Uma migration falhou pela metade e o registro ficou no histórico. O `FlywayConfig` resolve automaticamente na próxima inicialização; se persistir, remova a linha correspondente de `FLYWAY_SCHEMA_HISTORY` (atenção: as colunas dessa tabela são minúsculas e exigem aspas duplas no Oracle, ex. `WHERE "version" = 'N'`).
+Uma migration falhou pela metade. Não há reparo automático: pare, avise o time e siga as regras da seção [Migrações do banco](#migrações-do-banco-flyway) (correção em nova versão, sem `repair`/`clean`).
 
 **`Found non-empty schema(s) but no schema history table`**
-O schema tem tabelas criadas fora do Flyway. Mantenha `spring.flyway.baseline-on-migrate=true` ou limpe o schema antes da primeira execução.
+O schema tem tabelas mas não tem `flyway_schema_history`. Aponte para o schema correto ou avise o time; não habilite baseline por conta própria.
 
 **Timeout ao conectar em `oracle.fiap.com.br`**
 Verifique a conexão com a rede/VPN da FIAP.
