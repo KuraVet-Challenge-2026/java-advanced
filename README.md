@@ -350,7 +350,7 @@ Duas cadeias de filtros isoladas, em `SecurityConfig`:
 | `GET/POST /portal/pets/novo` | Cadastro de pet |
 | `GET/POST /portal/pets/{id}/editar` | Edição de pet |
 | `POST /portal/pets/{id}/excluir` | Exclusão de pet |
-| `GET /portal/triagens` | Fila de triagens, das mais urgentes para as menos (e, no mesmo nível, das mais recentes). Filtro opcional `?urgencia=` (`EMERGENCIA`, `ALTA`, `MODERADA`, `BAIXA`) ou `?urgentes=true` (ALTA + EMERGENCIA). Mostra data/hora, pet, tutor, urgência (selo colorido), sintomas, método (LLM ou palavras-chave) e link "Ver" |
+| `GET /portal/triagens` | Fila de triagens, das mais urgentes para as menos (e, no mesmo nível, das mais recentes). Filtro opcional `?urgencia=` (`EMERGENCIA`, `ALTA`, `MODERADA`, `BAIXA`) ou `?urgentes=true` (ALTA + EMERGENCIA). Mostra data/hora, pet, tutor, urgência (selo colorido), sintomas, método ("IA generativa" ou "Palavras-chave") e link "Ver" |
 | `GET /portal/triagens/{id}` | Detalhe: relato do tutor, sintomas, urgência, recomendação, "Por que esta classificação?" com as regras aplicadas, método de interpretação e aviso de que a triagem é orientativa; atalhos para o histórico do pet e para as consultas |
 | `GET /portal/pets/{id}/triagens` | Histórico de triagens do pet, da mais recente para a mais antiga, com urgência, sintomas e data |
 

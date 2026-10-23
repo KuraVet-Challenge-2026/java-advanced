@@ -57,7 +57,7 @@
                           th:text="${s.descricao} + (${estado.last} ? '' : ', ')">Sintoma</span>
                     <span th:if="${#sets.isEmpty(t.sintomas)}">—</span>
                 </td>
-                <td th:text="${t.metodoExtracao.name() == 'LLM'} ? 'LLM' : 'Palavras-chave'">Método</td>
+                <td th:text="${t.metodoExtracao.name() == 'LLM'} ? 'IA generativa' : 'Palavras-chave'">Método</td>
                 <td><a class="botao botao-secundario" th:href="@{/portal/triagens/{id}(id=${t.idTriagem})}">Ver</a></td>
             </tr>
             <tr th:if="${#lists.isEmpty(triagens) and (urgenciaSelecionada != null or somenteUrgentes)}">

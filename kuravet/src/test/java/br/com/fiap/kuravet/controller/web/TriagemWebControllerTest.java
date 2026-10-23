@@ -111,6 +111,18 @@ class TriagemWebControllerTest {
     }
 
     @Test
+    void filaDeveRotularMetodoLlmComoIaGenerativa() throws Exception {
+        Triagem viaLlm = triagem();
+        viaLlm.setMetodoExtracao(MetodoExtracao.LLM);
+        when(triagemService.listar(any())).thenReturn(List.of(viaLlm));
+
+        mockMvc.perform(get("/portal/triagens").with(user(veterinario())))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("IA generativa")))
+                .andExpect(content().string(not(containsString("Palavras-chave</td>"))));
+    }
+
+    @Test
     void filaVaziaDeveExibirEstadoVazioAmigavel() throws Exception {
         mockMvc.perform(get("/portal/triagens").with(user(veterinario())))
                 .andExpect(status().isOk())
