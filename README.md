@@ -320,7 +320,7 @@ Duas cadeias de filtros isoladas, em `SecurityConfig`:
 - A autenticação consulta a tabela `USUARIO` (`UsuarioDetailsService`), com senhas em **BCrypt**.
 - Autorização por perfil nas rotas (`SecurityConfig`) e **por dono** nos services: pet, consulta ou tutor de outro dono responde `404`, não `403`, para não revelar a existência de registros de terceiros.
 - Falha de autenticação em `/api/**` responde `401` puro, com `WWW-Authenticate`.
-- `/portal/**` exige `VETERINARIO`. Públicos: `/login`, `/error`, `/css/**`, `/api/ping`, `/actuator/health` e `POST /api/auth/cadastro`.
+- `/portal/**` exige `VETERINARIO` e `/tutor/**` exige `TUTOR`. Depois do login, cada perfil cai na sua área (`VETERINARIO` → `/portal/painel`, `TUTOR` → `/tutor/consultas`); `GET /` redireciona pelo perfil. Quem abre a área do outro perfil vê a página amigável `/acesso-negado` (HTTP 403), não a página de erro padrão. Públicos: `/login`, `/error`, `/css/**`, `/api/ping`, `/actuator/health` e `POST /api/auth/cadastro`.
 - `POST /api/auth/cadastro` sempre cria usuário `TUTOR`: o perfil nunca vem do corpo da requisição.
 
 **Usuários de teste** (dados de demonstração criados pelas migrations V2 e V3):
@@ -328,7 +328,7 @@ Duas cadeias de filtros isoladas, em `SecurityConfig`:
 | Usuário | Senha | Perfil | Acesso |
 |---|---|---|---|
 | `veterinario` | `vet123` | VETERINARIO | Portal web e API |
-| `tutor` | `tutor123` | TUTOR | Apenas API (app mobile) |
+| `tutor` | `tutor123` | TUTOR | API (app mobile) e área do tutor no portal (`/tutor/**`) |
 
 ---
 
@@ -355,6 +355,16 @@ Duas cadeias de filtros isoladas, em `SecurityConfig`:
 | `GET /portal/pets/{id}/triagens` | Histórico de triagens do pet, da mais recente para a mais antiga, com urgência, sintomas e data |
 
 As telas de triagem são somente de visualização: a triagem é criada pela API (app do tutor) e o portal apenas exibe o que foi gravado, sem chamar a LLM. O painel traz o card "Triagens urgentes (7 dias)", com a quantidade de triagens ALTA e EMERGENCIA dos últimos 7 dias e link para a fila filtrada.
+
+### Área do tutor no portal (perfil `TUTOR`)
+
+| Rota | Tela / ação |
+|---|---|
+| `GET /tutor/consultas` | "Minhas consultas": pet, veterinário, data, tipo, status e diagnóstico ou motivo da recusa. O botão "Cancelar" só aparece quando a regra do `ConsultaService.podeCancelar` permite (`SOLICITADA` e `AGENDADA`) |
+| `POST /tutor/consultas/{id}/cancelar` | Cancela a consulta (com confirmação) e volta à lista com mensagem de sucesso |
+| `GET /acesso-negado` | Página amigável para quem acessa a área de outro perfil, com botão para a área do perfil logado |
+
+Solicitar teleconsulta e fazer triagem continuam sendo feitos pelo app mobile (API REST).
 
 ### API REST (app mobile)
 
@@ -535,7 +545,7 @@ cd kuravet
 ./mvnw clean verify          # Linux / macOS
 ```
 
-**Resultado atual: 153 testes, 0 falhas, 0 erros** (execução local de `./mvnw clean verify`). Nenhum teste precisa de Oracle nem de internet; o pipeline roda exatamente este comando.
+**Resultado atual: 164 testes, 0 falhas, 0 erros** (execução local de `./mvnw clean verify`). Nenhum teste precisa de Oracle nem de internet; o pipeline roda exatamente este comando.
 
 | Área | Classes de teste |
 |---|---|
@@ -543,7 +553,8 @@ cd kuravet
 | Extração por palavras-chave, Gemini e fallback | `ExtratorPalavrasChaveTest`, `ExtratorGeminiTest`, `ExtratorComFallbackTest` |
 | Serviços (máquina de estados, ownership, triagem) | `ConsultaServiceTest`, `PetServiceTest`, `TriagemServiceTest` |
 | Segurança e autorização da API | `ConsultaControllerSecurityTest`, `TriagemControllerSecurityTest` |
-| Portal web (painel, consultas, pets e telas de triagem) | `PortalWebControllerTest`, `TriagemWebControllerTest` |
+| Portal web (painel, consultas, pets, triagem e área do tutor) | `PortalWebControllerTest`, `TriagemWebControllerTest`, `TutorWebControllerTest` |
+| Redirecionamento do login por perfil | `RedirecionamentoPorPerfilHandlerTest` |
 | Health check público | `HealthEndpointSecurityTest` |
 
 ---
