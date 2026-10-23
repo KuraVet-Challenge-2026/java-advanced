@@ -3,6 +3,7 @@ package br.com.fiap.kuravet.exception.handler;
 import br.com.fiap.kuravet.exception.ConsultaNaoEncontradaException;
 import br.com.fiap.kuravet.exception.PetNaoEncontradoException;
 import br.com.fiap.kuravet.exception.RegraDeNegocioException;
+import br.com.fiap.kuravet.exception.TriagemNaoEncontradaException;
 import br.com.fiap.kuravet.exception.TutorNaoEncontradoException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
@@ -26,6 +27,7 @@ public class PortalExceptionHandler {
     @ExceptionHandler({
             ConsultaNaoEncontradaException.class,
             PetNaoEncontradoException.class,
+            TriagemNaoEncontradaException.class,
             TutorNaoEncontradoException.class
     })
     public String naoEncontrado(RuntimeException ex, Model model) {

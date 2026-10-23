@@ -27,6 +27,10 @@
             <div class="numero" th:text="${totalRecusadas}">0</div>
             <div class="rotulo">Recusadas</div>
         </a>
+        <a class="indicador" th:href="@{/portal/triagens(urgentes=true)}">
+            <div class="numero" th:text="${totalTriagensUrgentes}">0</div>
+            <div class="rotulo">Triagens urgentes (7 dias)</div>
+        </a>
     </div>
 
     <h2>Como funciona o fluxo</h2>

@@ -350,6 +350,11 @@ Duas cadeias de filtros isoladas, em `SecurityConfig`:
 | `GET/POST /portal/pets/novo` | Cadastro de pet |
 | `GET/POST /portal/pets/{id}/editar` | Edição de pet |
 | `POST /portal/pets/{id}/excluir` | Exclusão de pet |
+| `GET /portal/triagens` | Fila de triagens, das mais urgentes para as menos (e, no mesmo nível, das mais recentes). Filtro opcional `?urgencia=` (`EMERGENCIA`, `ALTA`, `MODERADA`, `BAIXA`) ou `?urgentes=true` (ALTA + EMERGENCIA). Mostra data/hora, pet, tutor, urgência (selo colorido), sintomas, método (LLM ou palavras-chave) e link "Ver" |
+| `GET /portal/triagens/{id}` | Detalhe: relato do tutor, sintomas, urgência, recomendação, "Por que esta classificação?" com as regras aplicadas, método de interpretação e aviso de que a triagem é orientativa; atalhos para o histórico do pet e para as consultas |
+| `GET /portal/pets/{id}/triagens` | Histórico de triagens do pet, da mais recente para a mais antiga, com urgência, sintomas e data |
+
+As telas de triagem são somente de visualização: a triagem é criada pela API (app do tutor) e o portal apenas exibe o que foi gravado, sem chamar a LLM. O painel traz o card "Triagens urgentes (7 dias)", com a quantidade de triagens ALTA e EMERGENCIA dos últimos 7 dias e link para a fila filtrada.
 
 ### API REST (app mobile)
 
@@ -530,7 +535,7 @@ cd kuravet
 ./mvnw clean verify          # Linux / macOS
 ```
 
-**Resultado atual: 136 testes, 0 falhas, 0 erros** (execução local de `./mvnw clean verify`). Nenhum teste precisa de Oracle nem de internet; o pipeline roda exatamente este comando.
+**Resultado atual: 153 testes, 0 falhas, 0 erros** (execução local de `./mvnw clean verify`). Nenhum teste precisa de Oracle nem de internet; o pipeline roda exatamente este comando.
 
 | Área | Classes de teste |
 |---|---|
@@ -538,7 +543,7 @@ cd kuravet
 | Extração por palavras-chave, Gemini e fallback | `ExtratorPalavrasChaveTest`, `ExtratorGeminiTest`, `ExtratorComFallbackTest` |
 | Serviços (máquina de estados, ownership, triagem) | `ConsultaServiceTest`, `PetServiceTest`, `TriagemServiceTest` |
 | Segurança e autorização da API | `ConsultaControllerSecurityTest`, `TriagemControllerSecurityTest` |
-| Portal web | `PortalWebControllerTest` |
+| Portal web (painel, consultas, pets e telas de triagem) | `PortalWebControllerTest`, `TriagemWebControllerTest` |
 | Health check público | `HealthEndpointSecurityTest` |
 
 ---

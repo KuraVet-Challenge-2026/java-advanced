@@ -6,6 +6,7 @@ import br.com.fiap.kuravet.enums.StatusConsulta;
 import br.com.fiap.kuravet.model.Consulta;
 import br.com.fiap.kuravet.security.UsuarioPrincipal;
 import br.com.fiap.kuravet.service.ConsultaService;
+import br.com.fiap.kuravet.service.TriagemService;
 import jakarta.validation.Valid;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Controller
@@ -26,8 +28,11 @@ public class PortalWebController {
 
     private final ConsultaService consultaService;
 
-    public PortalWebController(ConsultaService consultaService) {
+    private final TriagemService triagemService;
+
+    public PortalWebController(ConsultaService consultaService, TriagemService triagemService) {
         this.consultaService = consultaService;
+        this.triagemService = triagemService;
     }
 
     @GetMapping("/login")
@@ -42,6 +47,8 @@ public class PortalWebController {
         model.addAttribute("totalAgendadas", consultaService.contarPorStatus(StatusConsulta.AGENDADA));
         model.addAttribute("totalRealizadas", consultaService.contarPorStatus(StatusConsulta.REALIZADA));
         model.addAttribute("totalRecusadas", consultaService.contarPorStatus(StatusConsulta.RECUSADA));
+        model.addAttribute("totalTriagensUrgentes",
+                triagemService.contarUrgentesDesde(LocalDateTime.now().minusDays(7)));
         return "painel";
     }
 
