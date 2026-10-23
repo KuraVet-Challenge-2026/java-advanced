@@ -25,6 +25,8 @@
             </th:block>
             <th:block sec:authorize="hasRole('TUTOR')">
                 <a th:href="@{/tutor/consultas}" th:classappend="${pagina == 'tutor-consultas'} ? 'ativo'">Minhas consultas</a>
+                <a th:href="@{/tutor/consultas/nova}" th:classappend="${pagina == 'tutor-solicitar'} ? 'ativo'">Solicitar teleconsulta</a>
+                <a th:href="@{/tutor/triagens}" th:classappend="${pagina == 'tutor-triagens'} ? 'ativo'">Triagem</a>
             </th:block>
         </nav>
         <div class="usuario">

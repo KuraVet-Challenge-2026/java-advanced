@@ -363,8 +363,14 @@ As telas de triagem são somente de visualização: a triagem é criada pela API
 | `GET /tutor/consultas` | "Minhas consultas": pet, veterinário, data, tipo, status e diagnóstico ou motivo da recusa. O botão "Cancelar" só aparece quando a regra do `ConsultaService.podeCancelar` permite (`SOLICITADA` e `AGENDADA`) |
 | `POST /tutor/consultas/{id}/cancelar` | Cancela a consulta (com confirmação) e volta à lista com mensagem de sucesso |
 | `GET /acesso-negado` | Página amigável para quem acessa a área de outro perfil, com botão para a área do perfil logado |
+| `GET /tutor/consultas/nova` | Formulário de solicitação: pets do próprio tutor, veterinário, data futura e tipo. Aceita `?idPet=` para abrir com o pet já selecionado |
+| `POST /tutor/consultas` | Solicita a teleconsulta (`ConsultaService.solicitarTeleconsulta`). Erros de validação e regras de negócio (ex.: pet já com consulta ativa na data) voltam ao formulário, sem página de erro |
+| `GET /tutor/triagens/nova` | Formulário da triagem: pet e relato de 10 a 1000 caracteres, com contador |
+| `POST /tutor/triagens` | Faz a triagem (`TriagemService.realizar`) e redireciona para o resultado, de modo que atualizar a página não refaz a triagem |
+| `GET /tutor/triagens/{id}` | Resultado: urgência em destaque, recomendação, sintomas, "Por que esta classificação?" (regras aplicadas), como foi interpretado (IA generativa ou palavras-chave) e o aviso de que é orientativa. Se a urgência for ALTA ou EMERGENCIA, mostra "Solicitar teleconsulta agora", que abre o formulário com o pet selecionado. Triagem de outro tutor responde 404 |
+| `GET /tutor/triagens` | Histórico das triagens do tutor, com link para cada resultado |
 
-Solicitar teleconsulta e fazer triagem continuam sendo feitos pelo app mobile (API REST).
+O menu do tutor tem "Minhas consultas", "Solicitar teleconsulta" e "Triagem". O app mobile continua usando a API REST para os mesmos fluxos.
 
 ### API REST (app mobile)
 
@@ -545,7 +551,7 @@ cd kuravet
 ./mvnw clean verify          # Linux / macOS
 ```
 
-**Resultado atual: 164 testes, 0 falhas, 0 erros** (execução local de `./mvnw clean verify`). Nenhum teste precisa de Oracle nem de internet; o pipeline roda exatamente este comando.
+**Resultado atual: 181 testes, 0 falhas, 0 erros** (execução local de `./mvnw clean verify`). Nenhum teste precisa de Oracle nem de internet; o pipeline roda exatamente este comando.
 
 | Área | Classes de teste |
 |---|---|
@@ -553,7 +559,7 @@ cd kuravet
 | Extração por palavras-chave, Gemini e fallback | `ExtratorPalavrasChaveTest`, `ExtratorGeminiTest`, `ExtratorComFallbackTest` |
 | Serviços (máquina de estados, ownership, triagem) | `ConsultaServiceTest`, `PetServiceTest`, `TriagemServiceTest` |
 | Segurança e autorização da API | `ConsultaControllerSecurityTest`, `TriagemControllerSecurityTest` |
-| Portal web (painel, consultas, pets, triagem e área do tutor) | `PortalWebControllerTest`, `TriagemWebControllerTest`, `TutorWebControllerTest` |
+| Portal web (painel, consultas, pets, triagem e área do tutor) | `PortalWebControllerTest`, `TriagemWebControllerTest`, `TutorWebControllerTest`, `TutorTriagemWebControllerTest` |
 | Redirecionamento do login por perfil | `RedirecionamentoPorPerfilHandlerTest` |
 | Health check público | `HealthEndpointSecurityTest` |
 

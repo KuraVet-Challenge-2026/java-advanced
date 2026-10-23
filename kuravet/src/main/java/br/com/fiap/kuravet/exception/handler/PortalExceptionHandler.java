@@ -5,6 +5,7 @@ import br.com.fiap.kuravet.exception.PetNaoEncontradoException;
 import br.com.fiap.kuravet.exception.RegraDeNegocioException;
 import br.com.fiap.kuravet.exception.TriagemNaoEncontradaException;
 import br.com.fiap.kuravet.exception.TutorNaoEncontradoException;
+import br.com.fiap.kuravet.exception.VeterinarioNaoEncontradoException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,7 +29,8 @@ public class PortalExceptionHandler {
             ConsultaNaoEncontradaException.class,
             PetNaoEncontradoException.class,
             TriagemNaoEncontradaException.class,
-            TutorNaoEncontradoException.class
+            TutorNaoEncontradoException.class,
+            VeterinarioNaoEncontradoException.class
     })
     public String naoEncontrado(RuntimeException ex, Model model) {
         model.addAttribute("titulo", "Registro não encontrado");

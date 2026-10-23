@@ -6,8 +6,13 @@
 <header th:replace="~{layout :: topo('tutor-consultas')}"></header>
 
 <main>
-    <h1>Minhas consultas</h1>
-    <p class="legenda">Teleconsultas dos seus pets e o andamento de cada uma.</p>
+    <div style="display:flex; justify-content:space-between; align-items:flex-start">
+        <div>
+            <h1>Minhas consultas</h1>
+            <p class="legenda">Teleconsultas dos seus pets e o andamento de cada uma.</p>
+        </div>
+        <a class="botao botao-principal" th:href="@{/tutor/consultas/nova}">Solicitar teleconsulta</a>
+    </div>
 
     <div th:replace="~{layout :: aviso}"></div>
 
@@ -47,7 +52,8 @@
             <tr th:if="${#lists.isEmpty(consultas)}">
                 <td colspan="7" class="vazio">
                     <strong>Você ainda não tem consultas.</strong>
-                    <p>As teleconsultas solicitadas pelo aplicativo KuraVet aparecem aqui.</p>
+                    <p>As teleconsultas que você solicitar aparecem aqui.</p>
+                    <a class="botao botao-principal" th:href="@{/tutor/consultas/nova}">Solicitar teleconsulta</a>
                 </td>
             </tr>
             </tbody>

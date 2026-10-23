@@ -1,6 +1,7 @@
 package br.com.fiap.kuravet.controller.web;
 
 import br.com.fiap.kuravet.config.SecurityConfig;
+import br.com.fiap.kuravet.dto.consulta.ConsultaRequestDTO;
 import br.com.fiap.kuravet.enums.Perfil;
 import br.com.fiap.kuravet.enums.StatusConsulta;
 import br.com.fiap.kuravet.exception.RegraDeNegocioException;
@@ -11,6 +12,8 @@ import br.com.fiap.kuravet.model.Usuario;
 import br.com.fiap.kuravet.model.Veterinario;
 import br.com.fiap.kuravet.security.UsuarioPrincipal;
 import br.com.fiap.kuravet.service.ConsultaService;
+import br.com.fiap.kuravet.service.PetService;
+import br.com.fiap.kuravet.service.VeterinarioService;
 import br.com.fiap.kuravet.service.TriagemService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -51,6 +54,12 @@ class TutorWebControllerTest {
 
     @MockitoBean
     private ConsultaService consultaService;
+
+    @MockitoBean
+    private PetService petService;
+
+    @MockitoBean
+    private VeterinarioService veterinarioService;
 
     // Dependencia do PortalWebController (painel); aqui so precisa existir.
     @MockitoBean
@@ -163,6 +172,114 @@ class TutorWebControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(view().name("erro"))
                 .andExpect(content().string(containsString("Transição de status inválida")));
+    }
+
+    // ---------- solicitar teleconsulta ----------
+
+    private Pet petDoTutor() {
+        return Pet.builder().idPet(1L).nome("Thor").especie("Cachorro")
+                .tutor(Tutor.builder().idTutor(1L).nome("Ana Paula").build()).build();
+    }
+
+    private Veterinario veterinarioDaClinica() {
+        return Veterinario.builder().idVeterinario(2L).nome("Dr. Rafael Andrade").build();
+    }
+
+    private void formularioValido(org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder req) {
+        req.param("idPet", "1")
+                .param("idVeterinario", "2")
+                .param("dataConsulta", LocalDate.now().plusDays(7).toString())
+                .param("tipoConsulta", "Teleconsulta - Dermatologia");
+    }
+
+    @Test
+    void formularioDeSolicitacaoDeveListarSomenteOsPetsDoTutor() throws Exception {
+        when(petService.listar(any())).thenReturn(List.of(petDoTutor()));
+        when(veterinarioService.listar()).thenReturn(List.of(veterinarioDaClinica()));
+
+        mockMvc.perform(get("/tutor/consultas/nova").with(user(tutor())))
+                .andExpect(status().isOk())
+                .andExpect(view().name("tutor-solicitar-consulta"))
+                .andExpect(model().attributeExists("pets", "veterinarios", "solicitacaoForm"))
+                .andExpect(content().string(containsString("Thor (Cachorro)")))
+                .andExpect(content().string(containsString("Dr. Rafael Andrade")));
+
+        verify(petService).listar(any());
+    }
+
+    @Test
+    void formularioDeSolicitacaoDeveVirComPetPreSelecionado() throws Exception {
+        when(petService.listar(any())).thenReturn(List.of(petDoTutor()));
+
+        mockMvc.perform(get("/tutor/consultas/nova").param("idPet", "1").with(user(tutor())))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("<option value=\"1\" selected=\"selected\">")));
+    }
+
+    @Test
+    void veterinarioNaoDeveAcessarFormularioDeSolicitacao() throws Exception {
+        mockMvc.perform(get("/tutor/consultas/nova").with(user(veterinario())))
+                .andExpect(status().isForbidden())
+                .andExpect(forwardedUrl("/acesso-negado"));
+    }
+
+    @Test
+    void solicitacaoValidaDeveRedirecionarComMensagemEChamarOService() throws Exception {
+        when(consultaService.solicitarTeleconsulta(any(), any())).thenReturn(consulta(9L, StatusConsulta.SOLICITADA));
+
+        var requisicao = post("/tutor/consultas").with(user(tutor())).with(csrf());
+        formularioValido(requisicao);
+
+        mockMvc.perform(requisicao)
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/tutor/consultas"))
+                .andExpect(flash().attribute("sucesso",
+                        "Teleconsulta de Thor solicitada. Aguarde a aprovação da clínica."));
+
+        verify(consultaService).solicitarTeleconsulta(any(),
+                eq(new ConsultaRequestDTO(1L, 2L, LocalDate.now().plusDays(7), "Teleconsulta - Dermatologia")));
+    }
+
+    @Test
+    void solicitacaoInvalidaDeveVoltarAoFormularioComErros() throws Exception {
+        when(petService.listar(any())).thenReturn(List.of(petDoTutor()));
+
+        mockMvc.perform(post("/tutor/consultas").with(user(tutor())).with(csrf())
+                        .param("idPet", "1")
+                        .param("dataConsulta", LocalDate.now().minusDays(1).toString())
+                        .param("tipoConsulta", ""))
+                .andExpect(status().isOk())
+                .andExpect(view().name("tutor-solicitar-consulta"))
+                .andExpect(model().attributeHasFieldErrors("solicitacaoForm",
+                        "idVeterinario", "dataConsulta", "tipoConsulta"))
+                .andExpect(content().string(containsString("A data desejada precisa ser futura.")));
+
+        verify(consultaService, never()).solicitarTeleconsulta(any(), any());
+    }
+
+    @Test
+    void regraDeNegocioNaSolicitacaoDeveAparecerNoFormularioSemPaginaDeErro() throws Exception {
+        when(petService.listar(any())).thenReturn(List.of(petDoTutor()));
+        when(consultaService.solicitarTeleconsulta(any(), any()))
+                .thenThrow(new RegraDeNegocioException("O pet Thor já possui uma consulta ativa em 2026-12-01."));
+
+        var requisicao = post("/tutor/consultas").with(user(tutor())).with(csrf());
+        formularioValido(requisicao);
+
+        mockMvc.perform(requisicao)
+                .andExpect(status().isOk())
+                .andExpect(view().name("tutor-solicitar-consulta"))
+                .andExpect(content().string(containsString("O pet Thor já possui uma consulta ativa")));
+    }
+
+    @Test
+    void solicitacaoSemCsrfDeveSerNegada() throws Exception {
+        var requisicao = post("/tutor/consultas").with(user(tutor()));
+        formularioValido(requisicao);
+
+        mockMvc.perform(requisicao).andExpect(status().isForbidden());
+
+        verify(consultaService, never()).solicitarTeleconsulta(any(), any());
     }
 
     @Test

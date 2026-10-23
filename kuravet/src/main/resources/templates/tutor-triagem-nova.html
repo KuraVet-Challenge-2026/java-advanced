@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout :: cabeca('Nova triagem')}"></head>
+<body>
+
+<header th:replace="~{layout :: topo('tutor-triagens')}"></header>
+
+<main>
+    <h1>Triagem por IA</h1>
+    <p class="legenda">
+        Conte o que o seu pet está sentindo. A IA interpreta o relato e regras claras definem a urgência.
+    </p>
+
+    <div class="quadro" th:if="${#lists.isEmpty(pets)}" style="padding:24px">
+        <strong>Você ainda não tem pets cadastrados.</strong>
+        <p>Cadastre seu pet pelo aplicativo KuraVet para fazer uma triagem.</p>
+    </div>
+
+    <form class="formulario" th:unless="${#lists.isEmpty(pets)}" th:action="@{/tutor/triagens}"
+          th:object="${triagemForm}" method="post">
+
+        <div class="campo">
+            <label for="idPet">Pet *</label>
+            <select id="idPet" th:field="*{idPet}" th:classappend="${#fields.hasErrors('idPet')} ? 'campo-invalido'">
+                <option value="">Selecione</option>
+                <option th:each="p : ${pets}" th:value="${p.idPet}"
+                        th:text="${p.nome} + ' (' + ${p.especie} + ')'">Pet</option>
+            </select>
+            <p class="erro-campo" th:if="${#fields.hasErrors('idPet')}" th:errors="*{idPet}"></p>
+        </div>
+
+        <label for="relato">Descreva o que o seu pet está sentindo *</label>
+        <textarea id="relato" th:field="*{relato}" maxlength="1000"
+                  th:classappend="${#fields.hasErrors('relato')} ? 'campo-invalido'"
+                  placeholder="Ex.: Ele vomitou duas vezes hoje e está sem vontade de comer."></textarea>
+        <p class="erro-campo" th:if="${#fields.hasErrors('relato')}" th:errors="*{relato}"></p>
+        <p class="ajuda"><span id="contador">0</span> / 1000 caracteres (mínimo de 10).</p>
+
+        <div class="rodape-form">
+            <button type="submit" class="botao botao-principal">Fazer triagem</button>
+            <a class="botao botao-secundario" th:href="@{/tutor/triagens}">Ver histórico</a>
+        </div>
+    </form>
+</main>
+
+<script>
+    (function () {
+        var campo = document.getElementById("relato");
+        var contador = document.getElementById("contador");
+        if (!campo || !contador) { return; }
+        function atualizar() { contador.textContent = campo.value.length; }
+        campo.addEventListener("input", atualizar);
+        atualizar();
+    })();
+</script>
+
+</body>
+</html>

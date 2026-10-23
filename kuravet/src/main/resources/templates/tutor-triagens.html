@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout :: cabeca('Minhas triagens')}"></head>
+<body>
+
+<header th:replace="~{layout :: topo('tutor-triagens')}"></header>
+
+<main>
+    <div style="display:flex; justify-content:space-between; align-items:flex-start">
+        <div>
+            <h1>Minhas triagens</h1>
+            <p class="legenda">Triagens dos seus pets, das mais urgentes para as menos urgentes.</p>
+        </div>
+        <a class="botao botao-principal" th:href="@{/tutor/triagens/nova}">Nova triagem</a>
+    </div>
+
+    <div class="quadro">
+        <table>
+            <thead>
+            <tr>
+                <th>Data e hora</th>
+                <th>Pet</th>
+                <th>Urgência</th>
+                <th>Sintomas</th>
+                <th>Ações</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="t : ${triagens}">
+                <td th:text="${#temporals.format(t.dataTriagem, 'dd/MM/yyyy HH:mm')}">--</td>
+                <td th:text="${t.pet.nome}">Pet</td>
+                <td><span class="selo" th:classappend="'selo-' + ${t.urgencia}" th:text="${t.urgencia}">URGENCIA</span></td>
+                <td>
+                    <span th:each="s, estado : ${t.sintomas}"
+                          th:text="${s.descricao} + (${estado.last} ? '' : ', ')">Sintoma</span>
+                    <span th:if="${#sets.isEmpty(t.sintomas)}">—</span>
+                </td>
+                <td><a class="botao botao-secundario" th:href="@{/tutor/triagens/{id}(id=${t.idTriagem})}">Ver resultado</a></td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(triagens)}">
+                <td colspan="5" class="vazio">
+                    <strong>Você ainda não fez nenhuma triagem.</strong>
+                    <p>Descreva os sintomas do seu pet e receba uma orientação sobre a urgência.</p>
+                    <a class="botao botao-principal" th:href="@{/tutor/triagens/nova}">Fazer a primeira triagem</a>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</main>
+
+</body>
+</html>
