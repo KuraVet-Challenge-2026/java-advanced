@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout :: cabeca('Minhas consultas')}"></head>
+<body>
+
+<header th:replace="~{layout :: topo('tutor-consultas')}"></header>
+
+<main>
+    <h1>Minhas consultas</h1>
+    <p class="legenda">Teleconsultas dos seus pets e o andamento de cada uma.</p>
+
+    <div th:replace="~{layout :: aviso}"></div>
+
+    <div class="quadro">
+        <table>
+            <thead>
+            <tr>
+                <th>Pet</th>
+                <th>Veterinário</th>
+                <th>Data da consulta</th>
+                <th>Tipo</th>
+                <th>Status</th>
+                <th>Diagnóstico / motivo da recusa</th>
+                <th>Ações</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="c : ${consultas}">
+                <td th:text="${c.pet.nome}">Pet</td>
+                <td th:text="${c.veterinario.nome}">Vet</td>
+                <td th:text="${#temporals.format(c.dataConsulta, 'dd/MM/yyyy')}">--</td>
+                <td th:text="${c.tipoConsulta}">Tipo</td>
+                <td><span class="selo" th:classappend="'selo-' + ${c.status}" th:text="${c.status}">STATUS</span></td>
+                <td>
+                    <span th:if="${c.diagnostico != null}" th:text="${c.diagnostico}">Diagnóstico</span>
+                    <span th:if="${c.motivoRecusa != null}" th:text="${c.motivoRecusa}">Motivo</span>
+                    <span th:if="${c.diagnostico == null and c.motivoRecusa == null}">—</span>
+                </td>
+                <td>
+                    <form th:if="${cancelaveis.contains(c.idConsulta)}"
+                          th:action="@{/tutor/consultas/{id}/cancelar(id=${c.idConsulta})}" method="post"
+                          onsubmit="return confirm('Cancelar esta consulta?');">
+                        <button type="submit" class="botao botao-perigo">Cancelar</button>
+                    </form>
+                </td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(consultas)}">
+                <td colspan="7" class="vazio">
+                    <strong>Você ainda não tem consultas.</strong>
+                    <p>As teleconsultas solicitadas pelo aplicativo KuraVet aparecem aqui.</p>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</main>
+
+</body>
+</html>

@@ -60,13 +60,16 @@ public class SecurityConfig {
                         .requestMatchers("/login", "/error", "/css/**", "/js/**", "/img/**").permitAll()
                         .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
                         .requestMatchers("/portal/**").hasRole("VETERINARIO")
+                        .requestMatchers("/tutor/**").hasRole("TUTOR")
+                        .requestMatchers("/acesso-negado").authenticated()
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form
                         .loginPage("/login")
-                        .defaultSuccessUrl("/portal/painel", true)
+                        .successHandler(new RedirecionamentoPorPerfilHandler())
                         .permitAll()
                 )
+                .exceptionHandling(exceptions -> exceptions.accessDeniedPage("/acesso-negado"))
                 .logout(logout -> logout
                         .logoutSuccessUrl("/login?logout")
                         .permitAll()

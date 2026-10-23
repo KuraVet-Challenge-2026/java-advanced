@@ -13,13 +13,19 @@
 
 <header class="topo" th:fragment="topo(pagina)">
     <div class="topo-interno">
-        <a class="marca" th:href="@{/portal/painel}">KuraVet</a>
+        <!-- "/" redireciona para a area do perfil logado. -->
+        <a class="marca" th:href="@{/}">KuraVet</a>
         <nav class="menu">
-            <a th:href="@{/portal/painel}" th:classappend="${pagina == 'painel'} ? 'ativo'">Painel</a>
-            <a th:href="@{/portal/pets}" th:classappend="${pagina == 'pets'} ? 'ativo'">Pets</a>
-            <a th:href="@{/portal/solicitacoes}" th:classappend="${pagina == 'solicitacoes'} ? 'ativo'">Solicitações</a>
-            <a th:href="@{/portal/consultas}" th:classappend="${pagina == 'consultas'} ? 'ativo'">Consultas</a>
-            <a th:href="@{/portal/triagens}" th:classappend="${pagina == 'triagens'} ? 'ativo'">Triagens</a>
+            <th:block sec:authorize="hasRole('VETERINARIO')">
+                <a th:href="@{/portal/painel}" th:classappend="${pagina == 'painel'} ? 'ativo'">Painel</a>
+                <a th:href="@{/portal/pets}" th:classappend="${pagina == 'pets'} ? 'ativo'">Pets</a>
+                <a th:href="@{/portal/solicitacoes}" th:classappend="${pagina == 'solicitacoes'} ? 'ativo'">Solicitações</a>
+                <a th:href="@{/portal/consultas}" th:classappend="${pagina == 'consultas'} ? 'ativo'">Consultas</a>
+                <a th:href="@{/portal/triagens}" th:classappend="${pagina == 'triagens'} ? 'ativo'">Triagens</a>
+            </th:block>
+            <th:block sec:authorize="hasRole('TUTOR')">
+                <a th:href="@{/tutor/consultas}" th:classappend="${pagina == 'tutor-consultas'} ? 'ativo'">Minhas consultas</a>
+            </th:block>
         </nav>
         <div class="usuario">
             <span sec:authentication="name">usuario</span>
@@ -36,7 +42,7 @@
 
 <!-- Paginas de erro: o menu so aparece para quem tem acesso ao portal. -->
 <th:block th:fragment="topo-erro">
-    <th:block sec:authorize="hasRole('VETERINARIO')">
+    <th:block sec:authorize="isAuthenticated()">
         <header th:replace="~{layout :: topo('')}"></header>
     </th:block>
 </th:block>
@@ -45,7 +51,9 @@
 <div th:fragment="voltar-perfil" class="acoes">
     <a sec:authorize="hasRole('VETERINARIO')" class="botao botao-principal"
        th:href="@{/portal/painel}">Voltar ao painel</a>
-    <a sec:authorize="!hasRole('VETERINARIO')" class="botao botao-principal"
+    <a sec:authorize="hasRole('TUTOR')" class="botao botao-principal"
+       th:href="@{/tutor/consultas}">Ir para minhas consultas</a>
+    <a sec:authorize="!hasRole('VETERINARIO') and !hasRole('TUTOR')" class="botao botao-principal"
        th:href="@{/login}">Ir para o login do portal</a>
 </div>
 

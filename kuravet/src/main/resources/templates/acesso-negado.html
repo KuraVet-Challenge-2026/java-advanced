@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout :: cabeca('Acesso não permitido')}"></head>
+<body>
+
+<th:block th:replace="~{layout :: topo-erro}"></th:block>
+
+<main>
+    <h1>Acesso não permitido para o seu perfil</h1>
+    <p class="legenda">Erro 403</p>
+    <p class="aviso aviso-erro">Esta página pertence a outra área do portal. Volte para a área do seu perfil.</p>
+    <div th:replace="~{layout :: voltar-perfil}"></div>
+</main>
+
+</body>
+</html>
