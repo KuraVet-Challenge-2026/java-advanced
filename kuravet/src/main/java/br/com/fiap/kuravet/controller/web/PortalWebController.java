@@ -1,5 +1,6 @@
 package br.com.fiap.kuravet.controller.web;
 
+import br.com.fiap.kuravet.config.RedirecionamentoPorPerfilHandler;
 import br.com.fiap.kuravet.dto.consulta.DiagnosticoRequestDTO;
 import br.com.fiap.kuravet.dto.consulta.RecusaRequestDTO;
 import br.com.fiap.kuravet.enums.StatusConsulta;
@@ -38,6 +39,17 @@ public class PortalWebController {
     @GetMapping("/login")
     public String login() {
         return "login";
+    }
+
+    // Quem nao esta logado e levado ao /login pela seguranca antes de chegar aqui.
+    @GetMapping("/")
+    public String inicio(@AuthenticationPrincipal UsuarioPrincipal principal) {
+        return "redirect:" + RedirecionamentoPorPerfilHandler.destino(principal.getPerfil());
+    }
+
+    @GetMapping("/acesso-negado")
+    public String acessoNegado() {
+        return "acesso-negado";
     }
 
 
