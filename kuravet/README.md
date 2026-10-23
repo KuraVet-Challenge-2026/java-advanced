@@ -208,7 +208,7 @@ O Hibernate roda com `spring.jpa.hibernate.ddl-auto=validate` — o schema é pr
 A aplicação **não** repara o histórico do Flyway: uma migration com problema derruba a inicialização com erro explícito, e `spring.flyway.baseline-on-migrate=false` faz um schema sem `flyway_schema_history` falhar em vez de rodar a V1 sobre tabelas existentes.
 
 - **Migrations aplicadas são imutáveis.** O Flyway compara o checksum do arquivo com o que foi executado e se recusa a continuar se houver diferença. Correções sempre entram em uma nova versão (`V8__`, `V9__`...).
-- **Nunca rode `flyway repair` ou `flyway clean`**, nem o script consolidado da disciplina de Banco de Dados (`script_bd.sql`), no schema do backend (**RM563620**).
+- **Nunca rode `flyway repair` ou `flyway clean`**, nem os scripts avulsos da disciplina de Banco de Dados, no schema do backend (**RM563620**): eles começam apagando TUTOR, PET e CONSULTA.
 - **Migrations com PL/SQL são testadas antes em um schema sandbox**, apontando `DB_USERNAME`/`DB_PASSWORD` para ele.
 - **Se uma migration falhar:** pare, avise o time e não tente reiniciar a aplicação em loop nem editar o histórico à mão. A correção é feita em uma nova versão, após o time avaliar o estado do schema.
 
@@ -228,11 +228,11 @@ Criados pela `V9` a partir do script da disciplina, sem as cargas e blocos de de
 
 Como o Oracle não falha um `CREATE` com erro de compilação, o último comando da `V9` confere `USER_OBJECTS` e lança `ORA-20900` com os nomes dos objetos inválidos, derrubando a migration.
 
-### Script SQL independente
+### Scripts da disciplina de Banco de Dados
 
-O arquivo `script_bd.sql`, na raiz do módulo, contém procedures, functions e a trigger de auditoria da disciplina de banco de dados. Ele é executado manualmente em um cliente Oracle e **não** faz parte do schema gerenciado pelo Flyway.
+Os scripts avulsos da disciplina (DDL, carga, packages, demonstração de evidências e exportação JSON para o MongoDB) ficam no repositório [`database`](https://github.com/KuraVet-Challenge-2026/database) e são executados em um schema Oracle separado.
 
-> ⚠️ O `script_bd.sql` e o script consolidado da disciplina de Banco começam apagando TUTOR, PET, CONSULTA e demais tabelas. Eles **nunca** podem ser executados no schema do backend (**RM563620**); use outro schema Oracle para essa demonstração.
+Neste backend, os mesmos objetos chegam ao schema da aplicação **somente** pelas migrations `V8` e `V9` (adaptadas às sequences e constraints do Flyway). Assim a aplicação e a disciplina de Banco usam a mesma base relacional, sem execução manual de scripts no schema do backend.
  
 ---
 
@@ -646,7 +646,6 @@ Os testes (`ExtratorGeminiTest` e `ExtratorComFallbackTest`) não usam Spring, b
 ```
 kuravet/
 ├── pom.xml
-├── script_bd.sql                    # Script SQL manual (disciplina de banco)
 └── src/main/
     ├── java/br/com/fiap/kuravet/
     │   ├── KuravetApplication.java
