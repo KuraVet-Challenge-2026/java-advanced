@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout :: cabeca('Solicitar teleconsulta')}"></head>
+<body>
+
+<header th:replace="~{layout :: topo('tutor-solicitar')}"></header>
+
+<main>
+    <h1>Solicitar teleconsulta</h1>
+    <p class="legenda">A clínica analisa o pedido e você acompanha a resposta em "Minhas consultas".</p>
+
+    <div class="quadro" th:if="${#lists.isEmpty(pets)}" style="padding:24px">
+        <strong>Você ainda não tem pets cadastrados.</strong>
+        <p>Cadastre seu pet pelo aplicativo KuraVet para solicitar uma teleconsulta.</p>
+    </div>
+
+    <form class="formulario" th:unless="${#lists.isEmpty(pets)}" th:action="@{/tutor/consultas}"
+          th:object="${solicitacaoForm}" method="post">
+
+        <ul class="aviso aviso-erro" th:if="${#fields.hasGlobalErrors()}" style="list-style:none">
+            <li th:each="erro : ${#fields.globalErrors()}" th:text="${erro}">Mensagem de erro.</li>
+        </ul>
+
+        <div class="grade-form">
+            <div>
+                <label for="idPet">Pet *</label>
+                <select id="idPet" th:field="*{idPet}" th:classappend="${#fields.hasErrors('idPet')} ? 'campo-invalido'">
+                    <option value="">Selecione</option>
+                    <option th:each="p : ${pets}" th:value="${p.idPet}"
+                            th:text="${p.nome} + ' (' + ${p.especie} + ')'">Pet</option>
+                </select>
+                <p class="erro-campo" th:if="${#fields.hasErrors('idPet')}" th:errors="*{idPet}"></p>
+            </div>
+
+            <div>
+                <label for="idVeterinario">Veterinário *</label>
+                <select id="idVeterinario" th:field="*{idVeterinario}"
+                        th:classappend="${#fields.hasErrors('idVeterinario')} ? 'campo-invalido'">
+                    <option value="">Selecione</option>
+                    <option th:each="v : ${veterinarios}" th:value="${v.idVeterinario}" th:text="${v.nome}">Vet</option>
+                </select>
+                <p class="erro-campo" th:if="${#fields.hasErrors('idVeterinario')}" th:errors="*{idVeterinario}"></p>
+            </div>
+
+            <div>
+                <label for="dataConsulta">Data desejada *</label>
+                <input type="date" id="dataConsulta" th:field="*{dataConsulta}"
+                       th:classappend="${#fields.hasErrors('dataConsulta')} ? 'campo-invalido'">
+                <p class="erro-campo" th:if="${#fields.hasErrors('dataConsulta')}" th:errors="*{dataConsulta}"></p>
+            </div>
+
+            <div>
+                <label for="tipoConsulta">Tipo da consulta *</label>
+                <input type="text" id="tipoConsulta" maxlength="40" th:field="*{tipoConsulta}"
+                       placeholder="Ex.: Teleconsulta - Dermatologia"
+                       th:classappend="${#fields.hasErrors('tipoConsulta')} ? 'campo-invalido'">
+                <p class="erro-campo" th:if="${#fields.hasErrors('tipoConsulta')}" th:errors="*{tipoConsulta}"></p>
+            </div>
+        </div>
+
+        <div class="rodape-form">
+            <button type="submit" class="botao botao-principal">Solicitar teleconsulta</button>
+            <a class="botao botao-secundario" th:href="@{/tutor/consultas}">Voltar</a>
+        </div>
+    </form>
+</main>
+
+</body>
+</html>

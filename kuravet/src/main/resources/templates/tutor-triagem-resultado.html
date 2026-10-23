@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout :: cabeca('Resultado da triagem')}"></head>
+<body>
+
+<header th:replace="~{layout :: topo('tutor-triagens')}"></header>
+
+<main>
+    <h1>Resultado da triagem de <span th:text="${triagem.pet.nome}">Pet</span></h1>
+    <p class="legenda" th:text="${#temporals.format(triagem.dataTriagem, 'dd/MM/yyyy HH:mm')}">--</p>
+
+    <div class="quadro" style="padding:24px; margin-bottom:24px">
+        <p style="margin-top:0">
+            Urgência:
+            <span class="selo" style="font-size:1.1rem; padding:6px 18px"
+                  th:classappend="'selo-' + ${triagem.urgencia}" th:text="${triagem.urgencia}">URGENCIA</span>
+        </p>
+        <p th:text="${triagem.recomendacao}">Recomendação</p>
+        <dl class="dados">
+            <div>
+                <dt>Sintomas identificados</dt>
+                <dd>
+                    <span th:each="s, estado : ${triagem.sintomas}"
+                          th:text="${s.descricao} + (${estado.last} ? '' : ', ')">Sintoma</span>
+                    <span th:if="${#sets.isEmpty(triagem.sintomas)}">Nenhum sintoma reconhecido.</span>
+                </dd>
+            </div>
+            <div>
+                <dt>Como foi interpretado</dt>
+                <dd th:text="${triagem.metodoExtracao.name() == 'LLM'}
+                             ? 'Interpretado por IA generativa'
+                             : 'Interpretado por palavras-chave'">Método</dd>
+            </div>
+        </dl>
+    </div>
+
+    <h2>Por que esta classificação?</h2>
+    <div class="quadro" style="padding:24px">
+        <p style="margin-top:0">A urgência foi decidida por regras claras, não pela IA. Regras aplicadas:</p>
+        <ul>
+            <li th:each="regra : ${triagem.regrasAplicadas}" th:text="${regra}">R1 - regra</li>
+        </ul>
+        <p class="legenda" style="margin-bottom:0">
+            Esta triagem é orientativa e não substitui a avaliação do veterinário.
+        </p>
+    </div>
+
+    <div class="acoes" style="margin-top:24px">
+        <a th:if="${urgente}" class="botao botao-principal"
+           th:href="@{/tutor/consultas/nova(idPet=${triagem.pet.idPet})}">Solicitar teleconsulta agora</a>
+        <a class="botao botao-secundario" th:href="@{/tutor/triagens/nova}">Nova triagem</a>
+        <a class="botao botao-secundario" th:href="@{/tutor/triagens}">Histórico de triagens</a>
+    </div>
+</main>
+
+</body>
+</html>
