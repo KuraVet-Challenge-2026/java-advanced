@@ -45,6 +45,8 @@
                     <div class="acoes">
                         <a class="botao botao-secundario"
                            th:href="@{/portal/pets/{id}/editar(id=${p.idPet})}">Editar</a>
+                        <a class="botao botao-secundario"
+                           th:href="@{/portal/pets/{id}/triagens(id=${p.idPet})}">Histórico de triagens</a>
                         <form th:action="@{/portal/pets/{id}/excluir(id=${p.idPet})}" method="post"
                               onsubmit="return confirm('Excluir este pet? A ação não pode ser desfeita.');">
                             <button type="submit" class="botao botao-perigo">Excluir</button>

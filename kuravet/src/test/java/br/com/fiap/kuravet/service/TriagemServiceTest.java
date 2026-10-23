@@ -226,6 +226,77 @@ class TriagemServiceTest {
         assertThat(triagens).extracting(Triagem::getIdTriagem).containsExactly(3L, 5L, 4L, 2L, 1L);
     }
 
+    @Test
+    void deveFiltrarPorUrgenciaMantendoAOrdemPorData() {
+        LocalDateTime agora = LocalDateTime.now();
+        when(triagemRepository.findAll()).thenReturn(List.of(
+                triagem(1L, ID_TUTOR_1, Urgencia.ALTA, agora.minusDays(1)),
+                triagem(2L, ID_TUTOR_2, Urgencia.BAIXA, agora),
+                triagem(3L, ID_TUTOR_2, Urgencia.ALTA, agora)));
+
+        List<Triagem> triagens = triagemService.listarPorUrgencia(principalVeterinario(), Urgencia.ALTA);
+
+        assertThat(triagens).extracting(Triagem::getIdTriagem).containsExactly(3L, 1L);
+    }
+
+    @Test
+    void listarUrgentesDeveTrazerSomenteAltaEEmergencia() {
+        LocalDateTime agora = LocalDateTime.now();
+        when(triagemRepository.findAll()).thenReturn(List.of(
+                triagem(1L, ID_TUTOR_1, Urgencia.BAIXA, agora),
+                triagem(2L, ID_TUTOR_1, Urgencia.MODERADA, agora),
+                triagem(3L, ID_TUTOR_2, Urgencia.ALTA, agora),
+                triagem(4L, ID_TUTOR_2, Urgencia.EMERGENCIA, agora)));
+
+        List<Triagem> triagens = triagemService.listarUrgentes(principalVeterinario());
+
+        assertThat(triagens).extracting(Triagem::getIdTriagem).containsExactly(4L, 3L);
+    }
+
+    // ---------- listarPorPet ----------
+
+    @Test
+    void listarPorPetDeveOrdenarDaMaisRecenteParaAMaisAntiga() {
+        UsuarioPrincipal vet = principalVeterinario();
+        LocalDateTime agora = LocalDateTime.now();
+        Pet pet = pet(5L, ID_TUTOR_1, "Gato", LocalDate.now().minusYears(2));
+        when(petService.buscarPorId(vet, 5L)).thenReturn(pet);
+        when(triagemRepository.findByPetIdPet(5L)).thenReturn(List.of(
+                triagem(1L, ID_TUTOR_1, Urgencia.BAIXA, agora.minusDays(5)),
+                triagem(2L, ID_TUTOR_1, Urgencia.EMERGENCIA, agora.minusDays(10)),
+                triagem(3L, ID_TUTOR_1, Urgencia.MODERADA, agora)));
+
+        List<Triagem> historico = triagemService.listarPorPet(vet, 5L);
+
+        assertThat(historico).extracting(Triagem::getIdTriagem).containsExactly(3L, 1L, 2L);
+    }
+
+    @Test
+    void listarPorPetDeveRespeitarOwnershipDoPetService() {
+        UsuarioPrincipal outroTutor = principalTutor(ID_TUTOR_2);
+        when(petService.buscarPorId(outroTutor, 5L)).thenThrow(new PetNaoEncontradoException(5L));
+
+        assertThrows(PetNaoEncontradoException.class, () -> triagemService.listarPorPet(outroTutor, 5L));
+
+        verify(triagemRepository, never()).findByPetIdPet(any());
+    }
+
+    // ---------- contarUrgentesDesde ----------
+
+    @Test
+    void contarUrgentesDesdeDeveSomarSomenteAltaEEmergencia() {
+        LocalDateTime desde = LocalDateTime.now().minusDays(7);
+        when(triagemRepository.countByUrgenciaAndDataTriagemGreaterThanEqual(Urgencia.ALTA, desde)).thenReturn(2L);
+        when(triagemRepository.countByUrgenciaAndDataTriagemGreaterThanEqual(Urgencia.EMERGENCIA, desde)).thenReturn(3L);
+
+        assertThat(triagemService.contarUrgentesDesde(desde)).isEqualTo(5L);
+
+        verify(triagemRepository, never())
+                .countByUrgenciaAndDataTriagemGreaterThanEqual(eq(Urgencia.MODERADA), any());
+        verify(triagemRepository, never())
+                .countByUrgenciaAndDataTriagemGreaterThanEqual(eq(Urgencia.BAIXA), any());
+    }
+
     // ---------- buscarPorId ----------
 
     @Test

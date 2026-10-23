@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout :: cabeca('Triagens')}"></head>
+<body>
+
+<header th:replace="~{layout :: topo('triagens')}"></header>
+
+<main>
+    <h1>Triagens</h1>
+    <p class="legenda">
+        Triagens feitas pelos tutores no aplicativo, das mais urgentes para as menos urgentes.
+        A urgência é decidida por regras auditáveis; a IA apenas interpreta o relato.
+    </p>
+
+    <form th:action="@{/portal/triagens}" method="get" style="margin-bottom:20px">
+        <div style="display:flex; gap:10px; align-items:flex-end; max-width:420px">
+            <div style="flex:1">
+                <label for="urgencia">Filtrar por urgência</label>
+                <select id="urgencia" name="urgencia">
+                    <option value="">Todas</option>
+                    <option th:each="u : ${todasAsUrgencias}"
+                            th:value="${u}"
+                            th:text="${u}"
+                            th:selected="${u == urgenciaSelecionada}">URGENCIA</option>
+                </select>
+            </div>
+            <button type="submit" class="botao botao-secundario">Aplicar</button>
+        </div>
+    </form>
+
+    <p class="aviso aviso-erro" th:if="${somenteUrgentes}">
+        Mostrando apenas triagens de urgência ALTA e EMERGENCIA.
+        <a th:href="@{/portal/triagens}">Ver todas</a>
+    </p>
+
+    <div class="quadro">
+        <table>
+            <thead>
+            <tr>
+                <th>Data e hora</th>
+                <th>Pet</th>
+                <th>Tutor</th>
+                <th>Urgência</th>
+                <th>Sintomas</th>
+                <th>Método</th>
+                <th>Ações</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="t : ${triagens}">
+                <td th:text="${#temporals.format(t.dataTriagem, 'dd/MM/yyyy HH:mm')}">--</td>
+                <td th:text="${t.pet.nome}">Pet</td>
+                <td th:text="${t.pet.tutor.nome}">Tutor</td>
+                <td><span class="selo" th:classappend="'selo-' + ${t.urgencia}" th:text="${t.urgencia}">URGENCIA</span></td>
+                <td>
+                    <span th:each="s, estado : ${t.sintomas}"
+                          th:text="${s.descricao} + (${estado.last} ? '' : ', ')">Sintoma</span>
+                    <span th:if="${#sets.isEmpty(t.sintomas)}">—</span>
+                </td>
+                <td th:text="${t.metodoExtracao.name() == 'LLM'} ? 'LLM' : 'Palavras-chave'">Método</td>
+                <td><a class="botao botao-secundario" th:href="@{/portal/triagens/{id}(id=${t.idTriagem})}">Ver</a></td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(triagens) and (urgenciaSelecionada != null or somenteUrgentes)}">
+                <td colspan="7" class="vazio">
+                    <strong>Nenhuma triagem encontrada com este filtro.</strong>
+                    <p>Escolha outra urgência ou veja todas as triagens.</p>
+                    <a class="botao botao-secundario" th:href="@{/portal/triagens}">Ver todas as triagens</a>
+                </td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(triagens) and urgenciaSelecionada == null and !somenteUrgentes}">
+                <td colspan="7" class="vazio">
+                    <strong>Nenhuma triagem registrada ainda.</strong>
+                    <p>As triagens aparecem aqui quando um tutor descreve os sintomas do pet pelo aplicativo.</p>
+                    <a class="botao botao-secundario" th:href="@{/portal/solicitacoes}">Ver solicitações pendentes</a>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</main>
+
+</body>
+</html>

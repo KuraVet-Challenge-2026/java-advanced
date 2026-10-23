@@ -9,6 +9,7 @@ import br.com.fiap.kuravet.model.Usuario;
 import br.com.fiap.kuravet.security.UsuarioPrincipal;
 import br.com.fiap.kuravet.service.ConsultaService;
 import br.com.fiap.kuravet.service.PetService;
+import br.com.fiap.kuravet.service.TriagemService;
 import br.com.fiap.kuravet.service.TutorService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,6 +47,9 @@ class PortalWebControllerTest {
     @MockitoBean
     private TutorService tutorService;
 
+    @MockitoBean
+    private TriagemService triagemService;
+
     private UsuarioPrincipal veterinario() {
         return new UsuarioPrincipal(Usuario.builder()
                 .idUsuario(99L)
@@ -61,6 +65,16 @@ class PortalWebControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("Painel da Clínica KuraVet")))
                 .andExpect(content().string(containsString("Aguardando aprovação")));
+    }
+
+    @Test
+    void painelDeveExibirCardDeTriagensUrgentesComLinkParaAFilaFiltrada() throws Exception {
+        when(triagemService.contarUrgentesDesde(any())).thenReturn(3L);
+
+        mockMvc.perform(get("/portal/painel").with(user(veterinario())))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("Triagens urgentes (7 dias)")))
+                .andExpect(content().string(containsString("/portal/triagens?urgentes=true")));
     }
 
     @Test

@@ -8,6 +8,7 @@ import br.com.fiap.kuravet.ia.PerfilPet;
 import br.com.fiap.kuravet.ia.ResultadoExtracao;
 import br.com.fiap.kuravet.ia.ResultadoTriagem;
 import br.com.fiap.kuravet.ia.SintomasExtraidos;
+import br.com.fiap.kuravet.ia.Urgencia;
 import br.com.fiap.kuravet.model.Pet;
 import br.com.fiap.kuravet.model.Triagem;
 import br.com.fiap.kuravet.repository.TriagemRepository;
@@ -83,6 +84,34 @@ public class TriagemService {
                 : triagemRepository.findAll();
 
         return triagens.stream().sorted(MAIS_URGENTES_PRIMEIRO).toList();
+    }
+
+    public List<Triagem> listarPorUrgencia(UsuarioPrincipal principal, Urgencia urgencia) {
+        return listar(principal).stream()
+                .filter(triagem -> triagem.getUrgencia() == urgencia)
+                .toList();
+    }
+
+    // ALTA e EMERGENCIA: as que pedem teleconsulta prioritaria ou atendimento imediato.
+    public List<Triagem> listarUrgentes(UsuarioPrincipal principal) {
+        return listar(principal).stream()
+                .filter(triagem -> triagem.getUrgencia().sugereTeleconsultaPrioritaria())
+                .toList();
+    }
+
+    // O ownership vem do PetService: pet de outro tutor responde como inexistente.
+    public List<Triagem> listarPorPet(UsuarioPrincipal principal, Long idPet) {
+        Pet pet = petService.buscarPorId(principal, idPet);
+
+        return triagemRepository.findByPetIdPet(pet.getIdPet()).stream()
+                .sorted(Comparator.comparing(Triagem::getDataTriagem, Comparator.reverseOrder()))
+                .toList();
+    }
+
+    // Soma apenas ALTA e EMERGENCIA; MODERADA e BAIXA nao entram na conta.
+    public long contarUrgentesDesde(LocalDateTime desde) {
+        return triagemRepository.countByUrgenciaAndDataTriagemGreaterThanEqual(Urgencia.ALTA, desde)
+                + triagemRepository.countByUrgenciaAndDataTriagemGreaterThanEqual(Urgencia.EMERGENCIA, desde);
     }
 
     public Triagem buscarPorId(UsuarioPrincipal principal, Long id) {

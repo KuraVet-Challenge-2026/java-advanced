@@ -19,6 +19,7 @@
             <a th:href="@{/portal/pets}" th:classappend="${pagina == 'pets'} ? 'ativo'">Pets</a>
             <a th:href="@{/portal/solicitacoes}" th:classappend="${pagina == 'solicitacoes'} ? 'ativo'">Solicitações</a>
             <a th:href="@{/portal/consultas}" th:classappend="${pagina == 'consultas'} ? 'ativo'">Consultas</a>
+            <a th:href="@{/portal/triagens}" th:classappend="${pagina == 'triagens'} ? 'ativo'">Triagens</a>
         </nav>
         <div class="usuario">
             <span sec:authentication="name">usuario</span>

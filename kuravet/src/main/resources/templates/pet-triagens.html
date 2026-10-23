@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout :: cabeca('Histórico de triagens')}"></head>
+<body>
+
+<header th:replace="~{layout :: topo('pets')}"></header>
+
+<main>
+    <h1 th:text="'Histórico de triagens de ' + ${pet.nome}">Histórico de triagens</h1>
+    <p class="legenda"
+       th:text="${pet.especie} + ', tutor ' + ${pet.tutor.nome} + '. Da triagem mais recente para a mais antiga.'">Pet</p>
+
+    <div class="quadro">
+        <table>
+            <thead>
+            <tr>
+                <th>Data e hora</th>
+                <th>Urgência</th>
+                <th>Sintomas</th>
+                <th>Ações</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="t : ${triagens}">
+                <td th:text="${#temporals.format(t.dataTriagem, 'dd/MM/yyyy HH:mm')}">--</td>
+                <td><span class="selo" th:classappend="'selo-' + ${t.urgencia}" th:text="${t.urgencia}">URGENCIA</span></td>
+                <td>
+                    <span th:each="s, estado : ${t.sintomas}"
+                          th:text="${s.descricao} + (${estado.last} ? '' : ', ')">Sintoma</span>
+                    <span th:if="${#sets.isEmpty(t.sintomas)}">—</span>
+                </td>
+                <td><a class="botao botao-secundario" th:href="@{/portal/triagens/{id}(id=${t.idTriagem})}">Ver</a></td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(triagens)}">
+                <td colspan="4" class="vazio">
+                    <strong>Este pet ainda não tem triagens.</strong>
+                    <p>As triagens aparecem aqui quando o tutor descreve os sintomas pelo aplicativo.</p>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="acoes" style="margin-top:24px">
+        <a class="botao botao-secundario" th:href="@{/portal/pets}">Voltar aos pets</a>
+        <a class="botao botao-secundario" th:href="@{/portal/triagens}">Fila de triagens</a>
+    </div>
+</main>
+
+</body>
+</html>

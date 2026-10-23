@@ -12,6 +12,8 @@
     --vermelho-claro:#fee2e2;
     --azul:         #1d4ed8;
     --azul-claro:   #dbeafe;
+    --laranja:      #c2410c;
+    --laranja-claro:#ffedd5;
 }
 
 * { box-sizing: border-box; }
@@ -75,6 +77,12 @@ td a { color: var(--verde); }
 .selo-REALIZADA  { background: var(--verde-claro); color: var(--verde); }
 .selo-RECUSADA   { background: var(--vermelho-claro); color: var(--vermelho); }
 .selo-CANCELADA  { background: var(--linha); color: var(--tinta-suave); }
+
+/* ----- selo de urgencia da triagem (mesmo padrao do selo de status) ----- */
+.selo-EMERGENCIA { background: var(--vermelho-claro); color: var(--vermelho); }
+.selo-ALTA       { background: var(--laranja-claro); color: var(--laranja); }
+.selo-MODERADA   { background: var(--ambar-claro); color: var(--ambar); }
+.selo-BAIXA      { background: var(--verde-claro); color: var(--verde); }
 
 /* ----- botoes ----- */
 .botao {

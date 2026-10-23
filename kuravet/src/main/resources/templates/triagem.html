@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout :: cabeca('Triagem')}"></head>
+<body>
+
+<header th:replace="~{layout :: topo('triagens')}"></header>
+
+<main>
+    <h1>
+        Triagem #<span th:text="${triagem.idTriagem}">1</span>
+        <span class="selo" th:classappend="'selo-' + ${triagem.urgencia}" th:text="${triagem.urgencia}">URGENCIA</span>
+    </h1>
+    <p class="legenda"
+       th:text="${triagem.pet.nome} + ' (' + ${triagem.pet.especie} + '), tutor ' + ${triagem.pet.tutor.nome}
+                + ' — ' + ${#temporals.format(triagem.dataTriagem, 'dd/MM/yyyy HH:mm')}">Pet</p>
+
+    <div class="quadro" style="padding:24px; margin-bottom:24px">
+        <dl class="dados">
+            <div>
+                <dt>Relato do tutor</dt>
+                <dd th:text="${triagem.relato}">Relato</dd>
+            </div>
+            <div>
+                <dt>Sintomas identificados</dt>
+                <dd>
+                    <span th:each="s, estado : ${triagem.sintomas}"
+                          th:text="${s.descricao} + (${estado.last} ? '' : ', ')">Sintoma</span>
+                    <span th:if="${#sets.isEmpty(triagem.sintomas)}">Nenhum sintoma reconhecido.</span>
+                </dd>
+            </div>
+            <div>
+                <dt>Recomendação</dt>
+                <dd th:text="${triagem.recomendacao}">Recomendação</dd>
+            </div>
+            <div>
+                <dt>Método de interpretação</dt>
+                <dd th:text="${triagem.metodoExtracao.name() == 'LLM'}
+                             ? 'LLM (a IA leu o relato e extraiu os sintomas)'
+                             : 'Palavras-chave (a LLM estava indisponível ou desligada)'">Método</dd>
+            </div>
+        </dl>
+    </div>
+
+    <h2>Por que esta classificação?</h2>
+    <div class="quadro" style="padding:24px">
+        <p style="margin-top:0">
+            A urgência foi decidida pelo motor de regras, não pela IA. Regras aplicadas:
+        </p>
+        <ul>
+            <li th:each="regra : ${triagem.regrasAplicadas}" th:text="${regra}">R1 - regra</li>
+        </ul>
+        <p class="legenda" style="margin-bottom:0">
+            Esta triagem é orientativa e não substitui a avaliação do veterinário.
+        </p>
+    </div>
+
+    <div class="acoes" style="margin-top:24px">
+        <a class="botao botao-principal"
+           th:href="@{/portal/pets/{id}/triagens(id=${triagem.pet.idPet})}">Histórico do pet</a>
+        <a class="botao botao-secundario" th:href="@{/portal/consultas}">Consultas</a>
+        <a class="botao botao-secundario" th:href="@{/portal/triagens}">Voltar à fila</a>
+    </div>
+</main>
+
+</body>
+</html>
