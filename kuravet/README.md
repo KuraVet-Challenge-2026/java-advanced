@@ -196,6 +196,8 @@ O schema é criado e versionado automaticamente na inicialização, a partir de 
 | `V5__seed_pets_e_consultas.sql` | Pets e consultas cobrindo todos os estados do fluxo |
 | `V6__pet_codigo_identificacao.sql` | Coluna opcional `CODIGO_IDENTIFICACAO` em PET (código da Petz, microchip etc.), única quando preenchida |
 | `V7__triagem.sql` | Tabela TRIAGEM (relato, sintomas, urgência, recomendação, regras aplicadas, método de extração), `SEQ_TRIAGEM` e índice por pet |
+| `V8__banco_tabelas_apoio.sql` | FATO_PAGAMENTO, AUDITORIA_LOG, LOG_ERRO_CARGA, índices de FK/filtros, `SEQ_PAGAMENTO` e dados de demonstração (consultas 50–57 REALIZADAS e 8 pagamentos em 3 clínicas); avança `SEQ_CONSULTA` para ≥ 100 |
+| `V9__banco_packages_e_trigger.sql` | Packages `PKG_KV_*`, trigger `TRG_AUDITORIA_CONSULTA` e verificação final que falha a migration se algum objeto ficar `INVALID` |
 
 Nenhum script precisa ser executado à mão: basta iniciar a aplicação apontando para um schema Oracle válido.
 
@@ -206,13 +208,31 @@ O Hibernate roda com `spring.jpa.hibernate.ddl-auto=validate` — o schema é pr
 A aplicação **não** repara o histórico do Flyway: uma migration com problema derruba a inicialização com erro explícito, e `spring.flyway.baseline-on-migrate=false` faz um schema sem `flyway_schema_history` falhar em vez de rodar a V1 sobre tabelas existentes.
 
 - **Migrations aplicadas são imutáveis.** O Flyway compara o checksum do arquivo com o que foi executado e se recusa a continuar se houver diferença. Correções sempre entram em uma nova versão (`V8__`, `V9__`...).
-- **Nunca rode `flyway repair` ou `flyway clean`**, nem o script consolidado da disciplina de Banco de Dados (`script_bd.sql`), no schema do backend (RM562396).
+- **Nunca rode `flyway repair` ou `flyway clean`**, nem o script consolidado da disciplina de Banco de Dados (`script_bd.sql`), no schema do backend (**RM563620**).
 - **Migrations com PL/SQL são testadas antes em um schema sandbox**, apontando `DB_USERNAME`/`DB_PASSWORD` para ele.
 - **Se uma migration falhar:** pare, avise o time e não tente reiniciar a aplicação em loop nem editar o histórico à mão. A correção é feita em uma nova versão, após o time avaliar o estado do schema.
+
+### Objetos PL/SQL (disciplina de Banco)
+
+Criados pela `V9` a partir do script da disciplina, sem as cargas e blocos de demonstração. Erros de negócio usam o catálogo `-20001..-20099` (`PKG_KV_UTIL`) e são gravados em `LOG_ERRO_CARGA` por transação autônoma. As rotinas de carga **não** fazem `COMMIT`: quem chama controla a transação. A chamada pela aplicação ainda não foi implementada.
+
+| Package | Rotinas |
+|---|---|
+| `PKG_KV_UTIL` | `PRC_REGISTRAR_ERRO`, `PRC_LANCAR_ERRO`, `PRC_TRATAR_INESPERADO`, `FN_MONTA_JSON`, `FN_CALCULA_IDADE_PET`, `FN_CATEGORIA_ETARIA` |
+| `PKG_KV_AUDITORIA` | `FN_SERIALIZAR_CONSULTA`, `PRC_REGISTRAR` |
+| `PKG_KV_CARGA` | `PRC_CARGA_TUTOR`, `PRC_CARGA_VETERINARIO`, `PRC_CARGA_PET`, `PRC_CARGA_CONSULTA`, `PRC_REGISTRAR_DIAGNOSTICO`, `PRC_CARGA_PAGAMENTO` |
+| `PKG_KV_RELATORIO` | `PRC_LISTAR_CONSULTAS_JSON` e `PRC_SUBTOTAIS_PAGAMENTO` (console, `DBMS_OUTPUT`); `PRC_CONSULTAS_TUTOR` e `PRC_FATURAMENTO_CLINICA_TIPO` (`SYS_REFCURSOR`) |
+| `PKG_KV_EXPORT` | `FN_DOC_PET`, `FN_DOC_VETERINARIO`, `FN_EXPORTAR_PETS`, `FN_EXPORTAR_VETERINARIOS` (JSON para o MongoDB) |
+
+**Trigger:** `TRG_AUDITORIA_CONSULTA` (`AFTER INSERT OR UPDATE OR DELETE ... FOR EACH ROW` em `CONSULTA`) apenas dispara; a regra fica em `PKG_KV_AUDITORIA`, que grava OLD/NEW em JSON em `AUDITORIA_LOG`. Se a auditoria falhar, a alteração na consulta é bloqueada.
+
+Como o Oracle não falha um `CREATE` com erro de compilação, o último comando da `V9` confere `USER_OBJECTS` e lança `ORA-20900` com os nomes dos objetos inválidos, derrubando a migration.
 
 ### Script SQL independente
 
 O arquivo `script_bd.sql`, na raiz do módulo, contém procedures, functions e a trigger de auditoria da disciplina de banco de dados. Ele é executado manualmente em um cliente Oracle e **não** faz parte do schema gerenciado pelo Flyway.
+
+> ⚠️ O `script_bd.sql` e o script consolidado da disciplina de Banco começam apagando TUTOR, PET, CONSULTA e demais tabelas. Eles **nunca** podem ser executados no schema do backend (**RM563620**); use outro schema Oracle para essa demonstração.
  
 ---
 
