@@ -24,5 +24,8 @@ public interface TriagemRepository extends JpaRepository<Triagem, Long> {
     @EntityGraph(attributePaths = {"pet", "pet.tutor"})
     List<Triagem> findByPetIdPet(Long idPet);
 
+    // Ultimas triagens do pet para o acompanhamento continuo na orientacao personalizada.
+    List<Triagem> findTop3ByPetIdPetOrderByDataTriagemDesc(Long idPet);
+
     long countByUrgenciaAndDataTriagemGreaterThanEqual(Urgencia urgencia, LocalDateTime desde);
 }

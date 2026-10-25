@@ -2,8 +2,11 @@ package br.com.fiap.kuravet.service;
 
 import br.com.fiap.kuravet.dto.triagem.TriagemRequestDTO;
 import br.com.fiap.kuravet.exception.TriagemNaoEncontradaException;
+import br.com.fiap.kuravet.ia.ContextoOrientacao;
 import br.com.fiap.kuravet.ia.ExtratorComFallback;
+import br.com.fiap.kuravet.ia.GeradorOrientacaoComFallback;
 import br.com.fiap.kuravet.ia.MotorRegrasTriagem;
+import br.com.fiap.kuravet.ia.OrientacaoGerada;
 import br.com.fiap.kuravet.ia.PerfilPet;
 import br.com.fiap.kuravet.ia.ResultadoExtracao;
 import br.com.fiap.kuravet.ia.ResultadoTriagem;
@@ -38,15 +41,18 @@ public class TriagemService {
     private final PetService petService;
     private final ExtratorComFallback extrator;
     private final MotorRegrasTriagem motorRegrasTriagem;
+    private final GeradorOrientacaoComFallback geradorOrientacao;
 
     public TriagemService(TriagemRepository triagemRepository,
                           PetService petService,
                           ExtratorComFallback extrator,
-                          MotorRegrasTriagem motorRegrasTriagem) {
+                          MotorRegrasTriagem motorRegrasTriagem,
+                          GeradorOrientacaoComFallback geradorOrientacao) {
         this.triagemRepository = triagemRepository;
         this.petService = petService;
         this.extrator = extrator;
         this.motorRegrasTriagem = motorRegrasTriagem;
+        this.geradorOrientacao = geradorOrientacao;
     }
 
     @Transactional
@@ -57,6 +63,7 @@ public class TriagemService {
         ResultadoExtracao extracao = extrator.extrair(dto.relato());
         SintomasExtraidos sintomas = extracao.sintomas();
         ResultadoTriagem resultado = motorRegrasTriagem.avaliar(sintomas, perfil);
+        OrientacaoGerada orientacao = gerarOrientacao(pet, perfil, dto.relato(), sintomas, resultado);
 
         Triagem triagem = Triagem.builder()
                 .pet(pet)
@@ -67,15 +74,37 @@ public class TriagemService {
                 .regrasAplicadas(resultado.regrasAplicadas())
                 .metodoExtracao(extracao.metodo())
                 .dataTriagem(LocalDateTime.now())
+                .orientacao(orientacao == null ? null : orientacao.texto())
+                .origemOrientacao(orientacao == null ? null : orientacao.origem())
                 .build();
 
         Triagem salva = triagemRepository.save(triagem);
 
         // O relato e dado do tutor e nao vai para o log.
-        log.info("Triagem registrada: idPet={}, urgencia={}, metodo={}",
-                pet.getIdPet(), salva.getUrgencia(), salva.getMetodoExtracao());
+        log.info("Triagem registrada: idPet={}, urgencia={}, metodo={}, orientacao={}",
+                pet.getIdPet(), salva.getUrgencia(), salva.getMetodoExtracao(), salva.getOrigemOrientacao());
 
         return salva;
+    }
+
+    // Roda depois do motor e so recebe o resultado pronto: nao altera urgencia nem recomendacao.
+    // Qualquer falha aqui deixa a triagem sem orientacao, mas nunca impede que ela seja salva.
+    private OrientacaoGerada gerarOrientacao(Pet pet, PerfilPet perfil, String relato,
+                                             SintomasExtraidos sintomas, ResultadoTriagem resultado) {
+        try {
+            List<ContextoOrientacao.TriagemAnterior> anteriores = triagemRepository
+                    .findTop3ByPetIdPetOrderByDataTriagemDesc(pet.getIdPet()).stream()
+                    .map(t -> new ContextoOrientacao.TriagemAnterior(
+                            t.getDataTriagem(), t.getUrgencia(), t.getSintomas()))
+                    .toList();
+
+            return geradorOrientacao.gerar(new ContextoOrientacao(
+                    pet.getNome(), pet.getEspecie(), perfil.idadeAnos(),
+                    resultado.urgencia(), resultado.recomendacao(), sintomas.sintomas(), relato, anteriores));
+        } catch (RuntimeException e) {
+            log.warn("Triagem salva sem orientação personalizada: {}", e.getClass().getSimpleName());
+            return null;
+        }
     }
 
     public List<Triagem> listar(UsuarioPrincipal principal) {

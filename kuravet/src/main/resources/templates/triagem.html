@@ -14,6 +14,16 @@
        th:text="${triagem.pet.nome} + ' (' + ${triagem.pet.especie} + '), tutor ' + ${triagem.pet.tutor.nome}
                 + ' — ' + ${#temporals.format(triagem.dataTriagem, 'dd/MM/yyyy HH:mm')}">Pet</p>
 
+    <div class="orientacao" th:if="${triagem.orientacao != null}">
+        <p class="orientacao-titulo">
+            Orientação para o tutor
+            <span class="selo" th:classappend="'selo-' + ${triagem.origemOrientacao}"
+                  th:text="${triagem.origemOrientacao != null and triagem.origemOrientacao.name() == 'IA_GENERATIVA'}
+                           ? 'Gerada por IA' : 'Orientação padrão'">Origem</span>
+        </p>
+        <p class="orientacao-texto" th:text="${triagem.orientacao}">Orientação</p>
+    </div>
+
     <div class="quadro" style="padding:24px; margin-bottom:24px">
         <dl class="dados">
             <div>

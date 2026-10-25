@@ -1,6 +1,7 @@
 package br.com.fiap.kuravet.dto.triagem;
 
 import br.com.fiap.kuravet.ia.MetodoExtracao;
+import br.com.fiap.kuravet.ia.OrigemOrientacao;
 import br.com.fiap.kuravet.ia.Sintoma;
 import br.com.fiap.kuravet.ia.Urgencia;
 import br.com.fiap.kuravet.model.Triagem;
@@ -18,7 +19,9 @@ public record TriagemResponseDTO(
         List<String> regrasAplicadas,
         MetodoExtracao metodoExtracao,
         LocalDateTime dataTriagem,
-        boolean sugereTeleconsultaPrioritaria
+        boolean sugereTeleconsultaPrioritaria,
+        String orientacao,
+        OrigemOrientacao origemOrientacao
 ) {
 
     public static TriagemResponseDTO fromEntity(Triagem triagem) {
@@ -32,7 +35,9 @@ public record TriagemResponseDTO(
                 List.copyOf(triagem.getRegrasAplicadas()),
                 triagem.getMetodoExtracao(),
                 triagem.getDataTriagem(),
-                triagem.getUrgencia().sugereTeleconsultaPrioritaria()
+                triagem.getUrgencia().sugereTeleconsultaPrioritaria(),
+                triagem.getOrientacao(),
+                triagem.getOrigemOrientacao()
         );
     }
 }
