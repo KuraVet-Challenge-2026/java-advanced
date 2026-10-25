@@ -1,6 +1,7 @@
 package br.com.fiap.kuravet.model;
 
 import br.com.fiap.kuravet.ia.MetodoExtracao;
+import br.com.fiap.kuravet.ia.OrigemOrientacao;
 import br.com.fiap.kuravet.ia.Sintoma;
 import br.com.fiap.kuravet.ia.Urgencia;
 import jakarta.persistence.Column;
@@ -71,4 +72,12 @@ public class Triagem {
 
     @Column(name = "DATA_TRIAGEM", nullable = false)
     private LocalDateTime dataTriagem;
+
+    // Nulos nas triagens anteriores a V10.
+    @Column(name = "ORIENTACAO", length = 1000)
+    private String orientacao;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "ORIGEM_ORIENTACAO", length = 20)
+    private OrigemOrientacao origemOrientacao;
 }

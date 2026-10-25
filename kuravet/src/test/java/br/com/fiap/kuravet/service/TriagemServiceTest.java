@@ -4,14 +4,20 @@ import br.com.fiap.kuravet.dto.triagem.TriagemRequestDTO;
 import br.com.fiap.kuravet.enums.Perfil;
 import br.com.fiap.kuravet.exception.PetNaoEncontradoException;
 import br.com.fiap.kuravet.exception.TriagemNaoEncontradaException;
+import br.com.fiap.kuravet.ia.ContextoOrientacao;
 import br.com.fiap.kuravet.ia.ExtratorComFallback;
 import br.com.fiap.kuravet.ia.ExtratorPalavrasChave;
+import br.com.fiap.kuravet.ia.GeradorOrientacaoComFallback;
+import br.com.fiap.kuravet.ia.GeradorOrientacaoModeloFixo;
 import br.com.fiap.kuravet.ia.MetodoExtracao;
 import br.com.fiap.kuravet.ia.MotorRegrasTriagem;
+import br.com.fiap.kuravet.ia.OrientacaoGerada;
+import br.com.fiap.kuravet.ia.OrigemOrientacao;
 import br.com.fiap.kuravet.ia.ResultadoExtracao;
 import br.com.fiap.kuravet.ia.SintomasExtraidos;
 import br.com.fiap.kuravet.ia.llm.ExtratorGemini;
 import br.com.fiap.kuravet.ia.llm.GeminiProperties;
+import br.com.fiap.kuravet.ia.llm.GeradorOrientacaoGemini;
 import br.com.fiap.kuravet.ia.Sintoma;
 import br.com.fiap.kuravet.ia.Urgencia;
 import br.com.fiap.kuravet.model.Pet;
@@ -55,14 +61,18 @@ class TriagemServiceTest {
     private PetService petService;
 
     private TriagemService triagemService;
+    private ExtratorComFallback extratorSemLlm;
 
     @BeforeEach
     void setUp() {
-        // LLM desligada: o extrator cai direto nas palavras-chave, deterministicas e sem rede.
+        // LLM desligada: extrator e orientacao caem direto nas palavras-chave e no modelo fixo, sem rede.
         GeminiProperties semLlm = new GeminiProperties(false, "", "http://localhost", "modelo", 1000);
-        ExtratorComFallback extrator = new ExtratorComFallback(semLlm,
+        extratorSemLlm = new ExtratorComFallback(semLlm,
                 org.mockito.Mockito.mock(ExtratorGemini.class), new ExtratorPalavrasChave());
-        triagemService = new TriagemService(triagemRepository, petService, extrator, new MotorRegrasTriagem());
+        GeradorOrientacaoComFallback orientacaoSemLlm = new GeradorOrientacaoComFallback(semLlm,
+                org.mockito.Mockito.mock(GeradorOrientacaoGemini.class), new GeradorOrientacaoModeloFixo());
+        triagemService = new TriagemService(triagemRepository, petService, extratorSemLlm,
+                new MotorRegrasTriagem(), orientacaoSemLlm);
     }
 
     // ---------- helpers ----------
@@ -152,7 +162,9 @@ class TriagemServiceTest {
         ExtratorComFallback extrator = org.mockito.Mockito.mock(ExtratorComFallback.class);
         when(extrator.extrair(any())).thenReturn(new ResultadoExtracao(
                 new SintomasExtraidos(Set.of(Sintoma.TOSSE), 1), MetodoExtracao.LLM));
-        TriagemService comLlm = new TriagemService(triagemRepository, petService, extrator, new MotorRegrasTriagem());
+        GeradorOrientacaoComFallback gerador = org.mockito.Mockito.mock(GeradorOrientacaoComFallback.class);
+        TriagemService comLlm = new TriagemService(triagemRepository, petService, extrator,
+                new MotorRegrasTriagem(), gerador);
 
         Triagem resultado = comLlm.realizar(tutor, new TriagemRequestDTO(2L, "tosse"));
 
@@ -182,6 +194,78 @@ class TriagemServiceTest {
                 () -> triagemService.realizar(tutor, new TriagemRequestDTO(1L, "Está vomitando muito")));
 
         verify(triagemRepository, never()).save(any());
+    }
+
+    // ---------- orientacao personalizada ----------
+
+    @Test
+    void devePersistirOrientacaoComAOrigemQueAProduziu() {
+        UsuarioPrincipal tutor = principalTutor(ID_TUTOR_1);
+        Pet gato = pet(2L, ID_TUTOR_1, "Gato", LocalDate.now().minusYears(5));
+        when(petService.buscarPorId(tutor, 2L)).thenReturn(gato);
+        when(triagemRepository.save(any(Triagem.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        Triagem resultado = triagemService.realizar(tutor,
+                new TriagemRequestDTO(2L, "Minha gata não faz xixi desde ontem"));
+
+        assertThat(resultado.getOrigemOrientacao()).isEqualTo(OrigemOrientacao.MODELO_FIXO);
+        assertThat(resultado.getOrientacao())
+                .startsWith("Sintomas identificados em Pet 2: não urina.")
+                .contains("Como a urgência é EMERGENCIA")
+                .endsWith(GeradorOrientacaoComFallback.AVISO);
+    }
+
+    @Test
+    void geradorDeveReceberAUrgenciaDoMotorEAsTriagensAnterioresDoPet() {
+        UsuarioPrincipal tutor = principalTutor(ID_TUTOR_1);
+        Pet gato = pet(2L, ID_TUTOR_1, "Gato", LocalDate.now().minusYears(5));
+        LocalDateTime ontem = LocalDateTime.now().minusDays(1);
+        Triagem anterior = triagem(1L, ID_TUTOR_1, Urgencia.MODERADA, ontem);
+        anterior.setSintomas(Set.of(Sintoma.VOMITO));
+        when(petService.buscarPorId(tutor, 2L)).thenReturn(gato);
+        when(triagemRepository.findTop3ByPetIdPetOrderByDataTriagemDesc(2L)).thenReturn(List.of(anterior));
+        when(triagemRepository.save(any(Triagem.class))).thenAnswer(inv -> inv.getArgument(0));
+        GeradorOrientacaoComFallback gerador = org.mockito.Mockito.mock(GeradorOrientacaoComFallback.class);
+        when(gerador.gerar(any())).thenReturn(new OrientacaoGerada("Orientação da IA.", OrigemOrientacao.IA_GENERATIVA));
+        TriagemService comGerador = new TriagemService(triagemRepository, petService, extratorSemLlm,
+                new MotorRegrasTriagem(), gerador);
+
+        Triagem resultado = comGerador.realizar(tutor, new TriagemRequestDTO(2L, "Minha gata não faz xixi desde ontem"));
+
+        ArgumentCaptor<ContextoOrientacao> captor = ArgumentCaptor.forClass(ContextoOrientacao.class);
+        verify(gerador).gerar(captor.capture());
+        ContextoOrientacao contexto = captor.getValue();
+        assertThat(contexto.nomePet()).isEqualTo("Pet 2");
+        assertThat(contexto.especie()).isEqualTo("Gato");
+        assertThat(contexto.idadeAnos()).isEqualTo(5);
+        assertThat(contexto.urgencia()).isEqualTo(Urgencia.EMERGENCIA);
+        assertThat(contexto.anteriores()).containsExactly(
+                new ContextoOrientacao.TriagemAnterior(ontem, Urgencia.MODERADA, Set.of(Sintoma.VOMITO)));
+
+        assertThat(resultado.getUrgencia()).isEqualTo(Urgencia.EMERGENCIA);
+        assertThat(resultado.getRecomendacao()).contains("pronto-socorro veterinário");
+        assertThat(resultado.getOrientacao()).isEqualTo("Orientação da IA.");
+        assertThat(resultado.getOrigemOrientacao()).isEqualTo(OrigemOrientacao.IA_GENERATIVA);
+    }
+
+    @Test
+    void erroNoGeradorNaoDeveImpedirATriagemDeSerSalva() {
+        UsuarioPrincipal tutor = principalTutor(ID_TUTOR_1);
+        Pet gato = pet(2L, ID_TUTOR_1, "Gato", LocalDate.now().minusYears(5));
+        when(petService.buscarPorId(tutor, 2L)).thenReturn(gato);
+        when(triagemRepository.save(any(Triagem.class))).thenAnswer(inv -> inv.getArgument(0));
+        GeradorOrientacaoComFallback gerador = org.mockito.Mockito.mock(GeradorOrientacaoComFallback.class);
+        when(gerador.gerar(any())).thenThrow(new IllegalStateException("falha inesperada"));
+        TriagemService comGeradorQuebrado = new TriagemService(triagemRepository, petService, extratorSemLlm,
+                new MotorRegrasTriagem(), gerador);
+
+        Triagem resultado = comGeradorQuebrado.realizar(tutor,
+                new TriagemRequestDTO(2L, "Minha gata não faz xixi desde ontem"));
+
+        verify(triagemRepository).save(any(Triagem.class));
+        assertThat(resultado.getUrgencia()).isEqualTo(Urgencia.EMERGENCIA);
+        assertThat(resultado.getOrientacao()).isNull();
+        assertThat(resultado.getOrigemOrientacao()).isNull();
     }
 
     // ---------- listar ----------
