@@ -5,6 +5,7 @@ import br.com.fiap.kuravet.enums.Perfil;
 import br.com.fiap.kuravet.exception.PetNaoEncontradoException;
 import br.com.fiap.kuravet.exception.TriagemNaoEncontradaException;
 import br.com.fiap.kuravet.ia.MetodoExtracao;
+import br.com.fiap.kuravet.ia.OrigemOrientacao;
 import br.com.fiap.kuravet.ia.Sintoma;
 import br.com.fiap.kuravet.ia.Urgencia;
 import br.com.fiap.kuravet.model.Pet;
@@ -170,6 +171,29 @@ class TriagemWebControllerTest {
                 .andExpect(content().string(containsString("não substitui a avaliação do veterinário")))
                 .andExpect(content().string(containsString("Histórico do pet")))
                 .andExpect(content().string(containsString("/portal/consultas")));
+    }
+
+    @Test
+    void detalheDeveExibirAOrientacaoEnviadaAoTutorComOSeloDeOrigem() throws Exception {
+        Triagem comOrientacao = triagem();
+        comOrientacao.setOrientacao("Luna precisa de atendimento agora.");
+        comOrientacao.setOrigemOrientacao(OrigemOrientacao.IA_GENERATIVA);
+        when(triagemService.buscarPorId(any(), eq(7L))).thenReturn(comOrientacao);
+
+        mockMvc.perform(get("/portal/triagens/7").with(user(veterinario())))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("Orientação para o tutor")))
+                .andExpect(content().string(containsString("Luna precisa de atendimento agora.")))
+                .andExpect(content().string(containsString("Gerada por IA")));
+    }
+
+    @Test
+    void detalheDeTriagemAntigaNaoDeveExibirOBlocoDeOrientacao() throws Exception {
+        when(triagemService.buscarPorId(any(), eq(7L))).thenReturn(triagem());
+
+        mockMvc.perform(get("/portal/triagens/7").with(user(veterinario())))
+                .andExpect(status().isOk())
+                .andExpect(content().string(not(containsString("Orientação para o tutor"))));
     }
 
     @Test

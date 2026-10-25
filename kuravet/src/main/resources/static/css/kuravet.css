@@ -84,6 +84,13 @@ td a { color: var(--verde); }
 .selo-MODERADA   { background: var(--ambar-claro); color: var(--ambar); }
 .selo-BAIXA      { background: var(--verde-claro); color: var(--verde); }
 
+/* ----- orientacao personalizada da triagem ----- */
+.orientacao { background: var(--azul-claro); border-left: 4px solid var(--azul); border-radius: 10px; padding: 18px 24px; margin-bottom: 24px; }
+.orientacao-titulo { margin: 0 0 8px; font-weight: 600; color: var(--azul); }
+.orientacao-texto { margin: 0; font-size: 1.05rem; }
+.selo-IA_GENERATIVA { background: var(--branco); color: var(--azul); margin-left: 8px; }
+.selo-MODELO_FIXO   { background: var(--branco); color: var(--tinta-suave); margin-left: 8px; }
+
 /* ----- botoes ----- */
 .botao {
     display: inline-block; padding: 8px 16px; border-radius: 7px; border: 1px solid transparent;

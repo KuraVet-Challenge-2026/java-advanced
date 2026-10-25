@@ -269,10 +269,11 @@ O schema pertence ao Flyway (`kuravet/src/main/resources/db/migration/`). Nenhum
 | `V7__triagem.sql` | Tabela TRIAGEM (relato, sintomas, urgência, recomendação, regras aplicadas, método de extração), `SEQ_TRIAGEM` e índice por pet |
 | `V8__banco_tabelas_apoio.sql` | FATO_PAGAMENTO, AUDITORIA_LOG, LOG_ERRO_CARGA, índices de FK/filtros, `SEQ_PAGAMENTO`, dados de demonstração (consultas 50–57 REALIZADAS e 8 pagamentos em 3 clínicas); avança `SEQ_CONSULTA` para ≥ 100 |
 | `V9__banco_packages_e_trigger.sql` | Packages `PKG_KV_*`, trigger `TRG_AUDITORIA_CONSULTA` e verificação final que falha a migration se algum objeto ficar `INVALID` |
+| `V10__triagem_orientacao_personalizada.sql` | Colunas anuláveis `ORIENTACAO` e `ORIGEM_ORIENTACAO` em TRIAGEM e a constraint `KV_CK_TRI_ORIGEM` |
 
 **Regras**
 
-- **Migrations aplicadas são imutáveis.** O Flyway compara o checksum e se recusa a continuar se o arquivo mudou. Correção entra em nova versão (`V10__`...).
+- **Migrations aplicadas são imutáveis.** O Flyway compara o checksum e se recusa a continuar se o arquivo mudou. Correção entra em nova versão (`V11__`...).
 - **Sem `repair` automático.** Migration com problema derruba a inicialização com erro explícito.
 - **Nunca rode `flyway repair`, `flyway clean` nem os scripts avulsos da disciplina de Banco no schema do backend**: eles começam apagando TUTOR, PET e CONSULTA.
 - **Migrations com PL/SQL são testadas antes em um schema sandbox** (apontando `DB_USERNAME`/`DB_PASSWORD` para ele).
@@ -450,7 +451,7 @@ Erros da API seguem um JSON padronizado (`timestamp`, `status`, `erro`, `mensage
 
 ## Triagem por IA
 
-Código em `br.com.fiap.kuravet.ia` (`MotorRegrasTriagem`, `ExtratorComFallback`, `ExtratorPalavrasChave`) e `br.com.fiap.kuravet.ia.llm` (`ExtratorGemini`).
+Código em `br.com.fiap.kuravet.ia` (`MotorRegrasTriagem`, `ExtratorComFallback`, `ExtratorPalavrasChave`, `GeradorOrientacaoComFallback`, `GeradorOrientacaoModeloFixo`) e `br.com.fiap.kuravet.ia.llm` (`ClienteGemini`, `ExtratorGemini`, `GeradorOrientacaoGemini`).
 
 **Regras.** Urgências, da menor para a maior: `BAIXA` < `MODERADA` < `ALTA` < `EMERGENCIA`. Filhote = menos de 1 ano; idoso = 10 anos ou mais.
 
@@ -493,6 +494,23 @@ A coluna `METODO_EXTRACAO` da tabela TRIAGEM guarda o método que **realmente** 
 | `kuravet.ia.llm.model` | `${LLM_MODEL:gemini-2.5-flash}` |
 | `kuravet.ia.llm.timeout-ms` | `8000` |
 
+### Orientação personalizada
+
+Depois que o motor de regras decide a urgência, o backend escreve uma orientação curta para o tutor, considerando nome, espécie e idade do pet, os sintomas, a urgência e a recomendação **já decididas** e as **até 3 triagens anteriores do mesmo pet** (data, urgência e sintomas), para apontar recorrência ou evolução (acompanhamento contínuo). A orientação **não altera** urgência nem recomendação: o gerador só é chamado com o resultado pronto do motor.
+
+**LLM e fallback** (`GeradorOrientacaoComFallback`)
+
+1. Se `kuravet.ia.llm.enabled=false` ou a chave está vazia, usa o **modelo fixo**, sem chamada HTTP.
+2. Caso contrário, chama o Gemini (`GeradorOrientacaoGemini`); sucesso grava a origem `IA_GENERATIVA`.
+3. Qualquer falha (timeout, rede, HTTP não 2xx, resposta bloqueada, texto vazio ou com mais de 600 caracteres) gera log `WARN` só com o motivo e cai para `MODELO_FIXO`.
+4. Se até o fallback falhar, a triagem é salva mesmo assim, sem orientação.
+
+O modelo fixo monta duas frases a partir do nome do pet, dos sintomas e da urgência, por exemplo: *"Sintomas identificados em Thor: vômito e diarreia. Como a urgência é ALTA, solicite uma teleconsulta ainda hoje."* Em ambos os casos o **código** acrescenta ao final *"Esta orientação não substitui a avaliação do veterinário."*; esse aviso nunca é pedido à LLM.
+
+A instrução de sistema pede pt-BR simples, no máximo 3 frases curtas, proíbe diagnóstico, medicamentos, doses e mudança da urgência, exige reforçar a ida ao veterinário em `ALTA`/`EMERGENCIA` e manda ignorar instruções do relato, que vai delimitado por `<relato></relato>` (as tags são removidas do texto do tutor). Temperatura 0.3, resposta em texto simples. A chamada HTTP (header `x-goog-api-key`, timeout, tratamento de erros) é a mesma da extração, compartilhada em `ClienteGemini`, e usa as mesmas propriedades `kuravet.ia.llm.*`.
+
+A orientação e a origem ficam em `ORIENTACAO` e `ORIGEM_ORIENTACAO` (V10). O resultado da triagem do tutor e o detalhe da triagem no portal do veterinário mostram a orientação em destaque com o selo **"Gerada por IA"** ou **"Orientação padrão"**; triagens anteriores à V10 não têm orientação e não exibem o bloco. Na API, `orientacao` e `origemOrientacao` foram acrescentados ao final da resposta (mudança aditiva, podem vir `null`).
+
 **Exemplo.** O `relato` é obrigatório (10 a 1000 caracteres); pet de outro tutor responde `404`.
 
 ```http
@@ -519,7 +537,9 @@ Resposta `201 Created`:
   ],
   "metodoExtracao": "PALAVRAS_CHAVE",
   "dataTriagem": "2026-10-15T21:40:12.345",
-  "sugereTeleconsultaPrioritaria": true
+  "sugereTeleconsultaPrioritaria": true,
+  "orientacao": "Sintomas identificados em Luna: apatia e não urina. Como a urgência é EMERGENCIA, procure agora um pronto-socorro veterinário. Esta orientação não substitui a avaliação do veterinário.",
+  "origemOrientacao": "MODELO_FIXO"
 }
 ```
 
@@ -532,7 +552,7 @@ Resposta `201 Created`:
 | **Java Advanced** | Backend Spring Boot com portal Thymeleaf, API REST, segurança por perfil, máquina de estados e Flyway | [`kuravet/`](kuravet/) |
 | **DevOps** | Pipeline de CI/CD no Azure Pipelines, deploy em Azure Web App via Variable Group e health check, infraestrutura por scripts | [`azure-pipelines.yml`](azure-pipelines.yml), [`infra/`](infra/) |
 | **Banco de Dados** | Tabelas de apoio (V8) e packages PL/SQL com trigger de auditoria (V9) no schema do backend, entregues por migration. A trigger é exercitada pelas telas e endpoints que alteram consultas; a chamada direta das procedures pela aplicação ainda não existe | [`V8`](kuravet/src/main/resources/db/migration/V8__banco_tabelas_apoio.sql), [`V9`](kuravet/src/main/resources/db/migration/V9__banco_packages_e_trigger.sql), [repo `database`](https://github.com/KuraVet-Challenge-2026/database) |
-| **Inteligência Artificial** | Triagem explicável: Gemini extrai sintomas, motor de regras R1–R10 decide a urgência, fallback por palavras-chave | [`kuravet/src/main/java/br/com/fiap/kuravet/ia/`](kuravet/src/main/java/br/com/fiap/kuravet/ia/), endpoint `POST /api/triagens` |
+| **Inteligência Artificial** | Triagem explicável: Gemini extrai sintomas, motor de regras R1–R10 decide a urgência, fallback por palavras-chave; orientação personalizada ao tutor com histórico do pet, gerada por IA com fallback por modelo fixo | [`kuravet/src/main/java/br/com/fiap/kuravet/ia/`](kuravet/src/main/java/br/com/fiap/kuravet/ia/), endpoint `POST /api/triagens` |
 | **Mobile** | O app do tutor (React Native) consome a API `/api/**` com HTTP Basic: cadastro, login, pets, consultas e triagem | `kuravet/src/main/java/br/com/fiap/kuravet/controller/api/`; repositório do app: `<PREENCHER>` |
 | **.NET** | `<PREENCHER: como a disciplina foi integrada>` | `<PREENCHER: link do repositório>` |
 | **QA** | Testes automatizados executados no CI (ver [Testes](#testes)); gestão de testes e tarefas no Azure Boards: `<PREENCHER>` | [`kuravet/src/test/`](kuravet/src/test/); Azure Boards: `<PREENCHER>` |
@@ -551,12 +571,13 @@ cd kuravet
 ./mvnw clean verify          # Linux / macOS
 ```
 
-**Resultado atual: 181 testes, 0 falhas, 0 erros** (execução local de `./mvnw clean verify`). Nenhum teste precisa de Oracle nem de internet; o pipeline roda exatamente este comando.
+**Resultado atual: 203 testes, 0 falhas, 0 erros** (execução local de `./mvnw clean verify`). Nenhum teste precisa de Oracle nem de internet; o pipeline roda exatamente este comando.
 
 | Área | Classes de teste |
 |---|---|
 | Motor de regras da triagem (R1–R10) | `MotorRegrasTriagemTest` |
 | Extração por palavras-chave, Gemini e fallback | `ExtratorPalavrasChaveTest`, `ExtratorGeminiTest`, `ExtratorComFallbackTest` |
+| Orientação personalizada (Gemini, modelo fixo e fallback) | `GeradorOrientacaoGeminiTest`, `GeradorOrientacaoComFallbackTest` |
 | Serviços (máquina de estados, ownership, triagem) | `ConsultaServiceTest`, `PetServiceTest`, `TriagemServiceTest` |
 | Segurança e autorização da API | `ConsultaControllerSecurityTest`, `TriagemControllerSecurityTest` |
 | Portal web (painel, consultas, pets, triagem e área do tutor) | `PortalWebControllerTest`, `TriagemWebControllerTest`, `TutorWebControllerTest`, `TutorTriagemWebControllerTest` |

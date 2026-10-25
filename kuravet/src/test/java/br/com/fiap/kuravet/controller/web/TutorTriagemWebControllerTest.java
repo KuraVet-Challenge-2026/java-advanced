@@ -5,6 +5,7 @@ import br.com.fiap.kuravet.dto.triagem.TriagemRequestDTO;
 import br.com.fiap.kuravet.enums.Perfil;
 import br.com.fiap.kuravet.exception.TriagemNaoEncontradaException;
 import br.com.fiap.kuravet.ia.MetodoExtracao;
+import br.com.fiap.kuravet.ia.OrigemOrientacao;
 import br.com.fiap.kuravet.ia.Sintoma;
 import br.com.fiap.kuravet.ia.Urgencia;
 import br.com.fiap.kuravet.model.Pet;
@@ -174,6 +175,43 @@ class TutorTriagemWebControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("Interpretado por palavras-chave")))
                 .andExpect(content().string(not(containsString("Solicitar teleconsulta agora"))));
+    }
+
+    @Test
+    void resultadoDeveDestacarAOrientacaoGeradaPorIa() throws Exception {
+        Triagem comOrientacao = triagem(Urgencia.EMERGENCIA, MetodoExtracao.LLM);
+        comOrientacao.setOrientacao("Luna precisa de atendimento agora. "
+                + "Esta orientação não substitui a avaliação do veterinário.");
+        comOrientacao.setOrigemOrientacao(OrigemOrientacao.IA_GENERATIVA);
+        when(triagemService.buscarPorId(any(), eq(7L))).thenReturn(comOrientacao);
+
+        mockMvc.perform(get("/tutor/triagens/7").with(user(tutor())))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("Orientação para você")))
+                .andExpect(content().string(containsString("Luna precisa de atendimento agora.")))
+                .andExpect(content().string(containsString("Gerada por IA")));
+    }
+
+    @Test
+    void resultadoComOrientacaoPadraoDeveExibirOSeloDoModeloFixo() throws Exception {
+        Triagem comOrientacao = triagem(Urgencia.BAIXA, MetodoExtracao.PALAVRAS_CHAVE);
+        comOrientacao.setOrientacao("Sintomas identificados em Luna: coceira.");
+        comOrientacao.setOrigemOrientacao(OrigemOrientacao.MODELO_FIXO);
+        when(triagemService.buscarPorId(any(), eq(7L))).thenReturn(comOrientacao);
+
+        mockMvc.perform(get("/tutor/triagens/7").with(user(tutor())))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("Orientação padrão")))
+                .andExpect(content().string(not(containsString("Gerada por IA"))));
+    }
+
+    @Test
+    void triagemAntigaSemOrientacaoNaoDeveExibirOBloco() throws Exception {
+        when(triagemService.buscarPorId(any(), eq(7L))).thenReturn(triagem(Urgencia.ALTA, MetodoExtracao.LLM));
+
+        mockMvc.perform(get("/tutor/triagens/7").with(user(tutor())))
+                .andExpect(status().isOk())
+                .andExpect(content().string(not(containsString("Orientação para você"))));
     }
 
     @Test
