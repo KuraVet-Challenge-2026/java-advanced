@@ -6,6 +6,7 @@ import br.com.fiap.kuravet.enums.StatusConsulta;
 import br.com.fiap.kuravet.exception.ConsultaNaoEncontradaException;
 import br.com.fiap.kuravet.exception.PetNaoEncontradoException;
 import br.com.fiap.kuravet.exception.RegraDeNegocioException;
+import br.com.fiap.kuravet.exception.VeterinarioNaoEncontradoException;
 import br.com.fiap.kuravet.model.Consulta;
 import br.com.fiap.kuravet.model.Pet;
 import br.com.fiap.kuravet.model.Tutor;
@@ -172,6 +173,21 @@ class ConsultaServiceTest {
     }
 
     @Test
+    void deveLancarVeterinarioNaoEncontradoAoSolicitarTeleconsultaComVeterinarioInexistente() {
+        Pet pet = pet(10L, ID_TUTOR_1);
+        ConsultaRequestDTO dto = new ConsultaRequestDTO(pet.getIdPet(), 999L, LocalDate.now().plusDays(5), "Rotina");
+
+        when(petRepository.findById(pet.getIdPet())).thenReturn(Optional.of(pet));
+        when(veterinarioRepository.findById(999L)).thenReturn(Optional.empty());
+
+        VeterinarioNaoEncontradoException excecao = assertThrows(VeterinarioNaoEncontradoException.class,
+                () -> consultaService.solicitarTeleconsulta(principalTutor(ID_TUTOR_1), dto));
+
+        assertThat(excecao.getMessage()).isEqualTo("Veterinário não encontrado para o ID: 999");
+        verify(consultaRepository, never()).save(any());
+    }
+
+    @Test
     void deveLancarRegraDeNegocioAoSolicitarTeleconsultaComConsultaAtivaNaMesmaData() {
         Pet pet = pet(10L, ID_TUTOR_1);
         Veterinario veterinario = veterinario(20L);
@@ -283,6 +299,19 @@ class ConsultaServiceTest {
                 () -> consultaService.cancelar(principalTutor(ID_TUTOR_1), 1L));
 
         verify(consultaRepository, never()).save(any());
+    }
+
+    @Test
+    void cancelamentoEmEstadoTerminalDeveManterAMensagemDaMaquinaDeEstados() {
+        Consulta consulta = consulta(1L, pet(10L, ID_TUTOR_1), veterinario(20L),
+                StatusConsulta.REALIZADA, LocalDate.now().plusDays(5));
+        when(consultaRepository.findById(1L)).thenReturn(Optional.of(consulta));
+
+        RegraDeNegocioException excecao = assertThrows(RegraDeNegocioException.class,
+                () -> consultaService.cancelar(principalTutor(ID_TUTOR_1), 1L));
+
+        assertThat(excecao.getMessage()).isEqualTo("Transição de status inválida: REALIZADA -> CANCELADA.");
+        assertThat(consulta.getStatus()).isEqualTo(StatusConsulta.REALIZADA);
     }
 
     @Test

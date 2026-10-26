@@ -5,6 +5,7 @@ import br.com.fiap.kuravet.enums.StatusConsulta;
 import br.com.fiap.kuravet.exception.ConsultaNaoEncontradaException;
 import br.com.fiap.kuravet.exception.PetNaoEncontradoException;
 import br.com.fiap.kuravet.exception.RegraDeNegocioException;
+import br.com.fiap.kuravet.exception.VeterinarioNaoEncontradoException;
 import br.com.fiap.kuravet.model.Consulta;
 import br.com.fiap.kuravet.model.Pet;
 import br.com.fiap.kuravet.model.Veterinario;
@@ -23,9 +24,11 @@ import java.util.Set;
 @Service
 public class ConsultaService {
 
+    // Maquina de estados completa; REALIZADA, RECUSADA e CANCELADA sao terminais.
+    // Quem pode disparar cada transicao (perfil) e decidido fora daqui, ex.: podeCancelar.
     private static final Map<StatusConsulta, Set<StatusConsulta>> TRANSICOES_PERMITIDAS = Map.of(
-            StatusConsulta.SOLICITADA, Set.of(StatusConsulta.AGENDADA, StatusConsulta.RECUSADA),
-            StatusConsulta.AGENDADA, Set.of(StatusConsulta.REALIZADA)
+            StatusConsulta.SOLICITADA, Set.of(StatusConsulta.AGENDADA, StatusConsulta.RECUSADA, StatusConsulta.CANCELADA),
+            StatusConsulta.AGENDADA, Set.of(StatusConsulta.REALIZADA, StatusConsulta.CANCELADA)
     );
 
     private static final Set<StatusConsulta> ESTADOS_ATIVOS =
@@ -128,11 +131,10 @@ public class ConsultaService {
             if (!principal.isTutor() && consulta.getStatus() == StatusConsulta.SOLICITADA) {
                 throw new RegraDeNegocioException("Solicitações pendentes devem ser recusadas com um motivo.");
             }
-            throw new RegraDeNegocioException(
-                    "Transição de status inválida: " + consulta.getStatus() + " -> " + StatusConsulta.CANCELADA + ".");
+            throw transicaoInvalida(consulta.getStatus(), StatusConsulta.CANCELADA);
         }
 
-        consulta.setStatus(StatusConsulta.CANCELADA);
+        transicionar(consulta, StatusConsulta.CANCELADA);
         return consultaRepository.save(consulta);
     }
 
@@ -178,11 +180,14 @@ public class ConsultaService {
         Set<StatusConsulta> permitidas = TRANSICOES_PERMITIDAS.getOrDefault(consulta.getStatus(), Set.of());
 
         if (!permitidas.contains(novoStatus)) {
-            throw new RegraDeNegocioException(
-                    "Transição de status inválida: " + consulta.getStatus() + " -> " + novoStatus + ".");
+            throw transicaoInvalida(consulta.getStatus(), novoStatus);
         }
 
         consulta.setStatus(novoStatus);
+    }
+
+    private static RegraDeNegocioException transicaoInvalida(StatusConsulta atual, StatusConsulta novoStatus) {
+        return new RegraDeNegocioException("Transição de status inválida: " + atual + " -> " + novoStatus + ".");
     }
 
     private Consulta buscarOuLancar(Long idConsulta) {
@@ -203,7 +208,6 @@ public class ConsultaService {
 
     private Veterinario buscarVeterinarioOuLancar(Long idVeterinario) {
         return veterinarioRepository.findById(idVeterinario)
-                .orElseThrow(() -> new RegraDeNegocioException(
-                        "Veterinário não encontrado para o ID: " + idVeterinario));
+                .orElseThrow(() -> new VeterinarioNaoEncontradoException(idVeterinario));
     }
 }

@@ -26,7 +26,7 @@ public record PetRequestDTO(
         Character sexo,
 
         @Size(max = 40, message = "O código de identificação deve ter no máximo 40 caracteres.")
-        @Pattern(regexp = "^[A-Za-z0-9._-]*$", message = "O código de identificação deve conter apenas letras, números, ponto, hífen ou underscore.")
+        @Pattern(regexp = "^\\s*[A-Za-z0-9._-]*\\s*$", message = "O código de identificação deve conter apenas letras, números, ponto, hífen ou underscore.")
         String codigoIdentificacao
 ) {
 }

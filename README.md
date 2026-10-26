@@ -425,7 +425,7 @@ SOLICITADA ──aprovar───▶ AGENDADA ──diagnóstico──▶ REALIZ
   RECUSADA      ╲────────▶ CANCELADA
 ```
 
-`REALIZADA`, `RECUSADA` e `CANCELADA` são terminais. Transição fora do mapa responde `400` com `Transicao de status invalida: X -> Y`. Na solicitação, o pet precisa ser do tutor autenticado, o veterinário precisa existir, a data precisa ser futura e o pet não pode ter outra consulta ativa na mesma data.
+`REALIZADA`, `RECUSADA` e `CANCELADA` são terminais. Transição fora do mapa responde `400` com `Transição de status inválida: X -> Y.`; o mapa (`TRANSICOES_PERMITIDAS`) diz quais transições existem e `podeCancelar` diz quem pode cancelar. Na solicitação, o pet precisa ser do tutor autenticado, o veterinário precisa existir (senão `404`), a data precisa ser futura e o pet não pode ter outra consulta ativa na mesma data.
 
 **Exemplo 1 — validar login e obter o perfil**
 
@@ -586,7 +586,7 @@ cd kuravet
 ./mvnw clean verify          # Linux / macOS
 ```
 
-**Resultado atual: 223 testes, 0 falhas, 0 erros** (execução local de `./mvnw clean verify`). Nenhum teste precisa de Oracle nem de internet; o pipeline roda exatamente este comando.
+**Resultado atual: 231 testes, 0 falhas, 0 erros** (execução local de `./mvnw clean verify`). Nenhum teste precisa de Oracle nem de internet; o pipeline roda exatamente este comando.
 
 | Área | Classes de teste |
 |---|---|
@@ -595,6 +595,7 @@ cd kuravet
 | Orientação personalizada (Gemini, modelo fixo e fallback) | `GeradorOrientacaoGeminiTest`, `GeradorOrientacaoComFallbackTest` |
 | Serviços (máquina de estados, ownership, triagem, financeiro) | `ConsultaServiceTest`, `PetServiceTest`, `TriagemServiceTest`, `FinanceiroServiceTest` |
 | Tradução de erros ORA-200xx dos packages | `OracleErroNegocioTradutorTest` |
+| Bean Validation do pet (código de identificação) | `PetRequestDTOValidationTest` |
 | Segurança e autorização da API | `ConsultaControllerSecurityTest`, `TriagemControllerSecurityTest` |
 | Portal web (painel, consultas, pets, triagem, financeiro e área do tutor) | `PortalWebControllerTest`, `TriagemWebControllerTest`, `FinanceiroWebControllerTest`, `TutorWebControllerTest`, `TutorTriagemWebControllerTest` |
 | Redirecionamento do login por perfil | `RedirecionamentoPorPerfilHandlerTest` |
