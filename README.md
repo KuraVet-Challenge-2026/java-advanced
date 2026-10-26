@@ -558,6 +558,38 @@ Resposta `201 Created`:
 }
 ```
 
+### Avaliação da triagem (resultados)
+
+O conjunto [`casos-triagem.csv`](kuravet/src/test/resources/ia/casos-triagem.csv) tem **39 relatos fictícios**, escritos como um tutor escreveria: sem acento, com gírias ("tá sem comer", "fazendo cocô mole", "caganeira"), erros de digitação, negações ("não vomitou", "sem febre"), durações ("há 5 dias", "desde ontem", "faz 1 semana"), cães e gatos, filhotes e idosos e 3 relatos sem sintoma reconhecível. A urgência esperada segue as regras R1–R10 aplicadas ao que o relato descreve. O `AvaliacaoTriagemTest` passa cada relato pelo caminho **determinístico** (`ExtratorPalavrasChave` + `MotorRegrasTriagem`, sem LLM), imprime no log a acurácia, a matriz de confusão e os casos errados, e falha se a acurácia geral ficar abaixo de **85%**.
+
+| Nível esperado | Casos | Acertos | Acurácia |
+|---|---|---|---|
+| EMERGENCIA | 10 | 10 | 100% |
+| ALTA | 11 | 10 | 90,9% |
+| MODERADA | 10 | 10 | 100% |
+| BAIXA (inclui R10) | 8 | 8 | 100% |
+| **Geral** | **39** | **38** | **97,4%** |
+
+**Linha de base e correções.** A primeira execução deu **36/39 (92,3%)**. Dois erros eram termos coloquiais que faltavam no dicionário: "não tá fazendo xixi" (gato, esperado EMERGENCIA, obtido BAIXA) e "tá sem comer há 4 dias" (esperado ALTA, obtido BAIXA). Os dois foram acrescentados, junto com "caganeira", "não tá comendo", "não tá urinando" e "não está fazendo xixi", com casos no `ExtratorPalavrasChaveTest`. As regras do motor não foram alteradas. Como os termos foram acrescentados depois de ver os erros **deste mesmo conjunto**, os 97,4% são otimistas; os 92,3% iniciais são a estimativa mais honesta para relatos novos.
+
+**Erro restante e o papel da LLM.** "Ele ta vomitano muito e com caganeira" sai MODERADA (só a diarreia é reconhecida) em vez de ALTA (R4, vômito + diarreia). Erros de digitação como "vomitano" não entram no dicionário de propósito: cada grafia errada exigiria um termo novo. Esse é o tipo de relato que a extração por **Gemini** cobre, porque a LLM entende variações de escrita, sinônimos e frases indiretas ("não levanta nem pra comer") e devolve sintomas do mesmo enum; a urgência continua sendo decidida pelo motor. O conjunto não mede a LLM: chamar o Gemini no CI deixaria o build dependente de rede, cota e chave.
+
+**Limitações e pontos clínicos.**
+
+- **Amostra:** 39 casos, escritos pela própria equipe. Servem para pegar regressões, não para medir a qualidade em produção.
+- **Cadela idosa prostrada que "não levanta nem pra comer":** o motor dá MODERADA. A R5 só sobe a urgência de filhotes e idosos com vômito ou diarreia. Um veterinário provavelmente classificaria como ALTA, mas o caso foi mantido com o resultado das regras, para registro, sem mudar o motor.
+- **"Enjoado no carro":** conta como vômito (MODERADA). Enjoo de viagem costuma ser menos grave; cabe revisar o termo `enjoado` com um veterinário.
+
+**Como rodar.**
+
+```bash
+cd kuravet
+./mvnw -Dtest=AvaliacaoTriagemTest test     # Linux / macOS
+.\mvnw.cmd -Dtest=AvaliacaoTriagemTest test # Windows
+```
+
+O resumo aparece no log do teste (o teste também roda no `./mvnw clean verify` do CI).
+
 ---
 
 ## Integração multidisciplinar
@@ -586,12 +618,13 @@ cd kuravet
 ./mvnw clean verify          # Linux / macOS
 ```
 
-**Resultado atual: 231 testes, 0 falhas, 0 erros** (execução local de `./mvnw clean verify`). Nenhum teste precisa de Oracle nem de internet; o pipeline roda exatamente este comando.
+**Resultado atual: 237 testes, 0 falhas, 0 erros** (execução local de `./mvnw clean verify`). Nenhum teste precisa de Oracle nem de internet; o pipeline roda exatamente este comando.
 
 | Área | Classes de teste |
 |---|---|
 | Motor de regras da triagem (R1–R10) | `MotorRegrasTriagemTest` |
 | Extração por palavras-chave, Gemini e fallback | `ExtratorPalavrasChaveTest`, `ExtratorGeminiTest`, `ExtratorComFallbackTest` |
+| Avaliação da triagem (acurácia sobre 39 relatos, mínimo 85%) | `AvaliacaoTriagemTest` |
 | Orientação personalizada (Gemini, modelo fixo e fallback) | `GeradorOrientacaoGeminiTest`, `GeradorOrientacaoComFallbackTest` |
 | Serviços (máquina de estados, ownership, triagem, financeiro) | `ConsultaServiceTest`, `PetServiceTest`, `TriagemServiceTest`, `FinanceiroServiceTest` |
 | Tradução de erros ORA-200xx dos packages | `OracleErroNegocioTradutorTest` |

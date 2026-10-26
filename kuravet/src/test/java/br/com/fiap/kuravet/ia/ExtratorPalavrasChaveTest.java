@@ -55,7 +55,13 @@ class ExtratorPalavrasChaveTest {
                 arguments("Está com fezes moles e sem energia há cinco dias", Set.of(DIARREIA, APATIA), 5),
                 arguments("Acho que ingeriu raticida", Set.of(INGESTAO_TOXICA), null),
                 arguments("Vomitando há 1 dia, piorou faz 3 dias e há uma semana já estava estranho", Set.of(VOMITO), 7),
-                arguments("Não come e não comeu chocolate", Set.of(FALTA_DE_APETITE), null)
+                arguments("Não come e não comeu chocolate", Set.of(FALTA_DE_APETITE), null),
+                // Formas coloquiais que apareceram na AvaliacaoTriagemTest.
+                arguments("A Luna tá sem comer há uns 4 dias", Set.of(FALTA_DE_APETITE), 4),
+                arguments("ele não tá comendo a ração", Set.of(FALTA_DE_APETITE), null),
+                arguments("meu gato não tá fazendo xixi", Set.of(NAO_URINA), null),
+                arguments("Ela não está fazendo xixi desde ontem", Set.of(NAO_URINA), 1),
+                arguments("Está com caganeira", Set.of(DIARREIA), null)
         );
     }
 

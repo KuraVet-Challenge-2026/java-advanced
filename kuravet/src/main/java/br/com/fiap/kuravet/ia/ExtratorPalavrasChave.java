@@ -135,9 +135,10 @@ public class ExtratorPalavrasChave implements ExtratorSintomas {
                 "vomito", "vomitos", "vomitou", "vomitando", "vomitar", "vomita",
                 "enjoo", "enjoado", "enjoada", "botou pra fora", "botando pra fora"));
         dicionario.put(Sintoma.DIARREIA, List.of(
-                "diarreia", "fezes moles", "fezes mole", "coco mole", "fezes liquidas", "intestino solto"));
+                "diarreia", "fezes moles", "fezes mole", "coco mole", "fezes liquidas", "intestino solto",
+                "caganeira"));
         dicionario.put(Sintoma.FALTA_DE_APETITE, List.of(
-                "nao come", "nao quer comer", "nao esta comendo", "sem apetite",
+                "nao come", "nao quer comer", "nao esta comendo", "nao ta comendo", "sem comer", "sem apetite",
                 "parou de comer", "recusa comida", "recusando comida", "falta de apetite"));
         dicionario.put(Sintoma.APATIA, List.of(
                 "apatico", "apatica", "apatia", "desanimado", "desanimada",
@@ -167,7 +168,8 @@ public class ExtratorPalavrasChave implements ExtratorSintomas {
                 "engoliu remedio", "uva", "uvas", "raticida", "veneno de rato"));
         dicionario.put(Sintoma.NAO_URINA, List.of(
                 "nao faz xixi", "nao fez xixi", "nao urina", "nao urinou", "sem urinar",
-                "nao consegue urinar", "nao consegue fazer xixi", "nao esta urinando"));
+                "nao consegue urinar", "nao consegue fazer xixi", "nao esta urinando",
+                "nao ta urinando", "nao esta fazendo xixi", "nao ta fazendo xixi"));
         dicionario.put(Sintoma.DESMAIO, List.of(
                 "desmaio", "desmaiou", "desmaiando", "desmaiar", "desfaleceu", "perdeu a consciencia"));
         return dicionario;
