@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout :: cabeca('Financeiro')}"></head>
+<body>
+
+<header th:replace="~{layout :: topo('financeiro')}"></header>
+
+<main>
+    <h1>Financeiro</h1>
+    <p class="legenda">
+        Pagamentos e faturamento processados pelos packages PL/SQL do banco
+        (<code>PKG_KV_CARGA</code> e <code>PKG_KV_RELATORIO</code>).
+    </p>
+
+    <div th:replace="~{layout :: aviso}"></div>
+
+    <h2>Registrar pagamento</h2>
+    <form class="formulario" th:action="@{/portal/financeiro/pagamentos}" th:object="${pagamentoForm}"
+          method="post" style="margin-bottom:32px">
+
+        <ul class="aviso aviso-erro" th:if="${#fields.hasGlobalErrors()}" style="list-style:none">
+            <li th:each="erro : ${#fields.globalErrors()}" th:text="${erro}">Mensagem de erro.</li>
+        </ul>
+
+        <div class="grade-form">
+            <div>
+                <label for="idConsulta">Consulta realizada *</label>
+                <select id="idConsulta" th:field="*{idConsulta}"
+                        th:classappend="${#fields.hasErrors('idConsulta')} ? 'campo-invalido'">
+                    <option value="">Selecione</option>
+                    <option th:each="c : ${consultasRealizadas}" th:value="${c.idConsulta}"
+                            th:text="'#' + ${c.idConsulta} + ' - ' + ${c.pet.nome} + ' ('
+                                     + ${#temporals.format(c.dataConsulta, 'dd/MM/yyyy')} + ')'">Consulta</option>
+                </select>
+                <p class="erro-campo" th:if="${#fields.hasErrors('idConsulta')}" th:errors="*{idConsulta}"></p>
+                <p class="ajuda" th:if="${#lists.isEmpty(consultasRealizadas)}">Nenhuma consulta realizada para pagamento.</p>
+            </div>
+
+            <div>
+                <label for="clinica">Clínica *</label>
+                <input type="text" id="clinica" maxlength="60" th:field="*{clinica}"
+                       placeholder="Ex.: KuraVet Pinheiros"
+                       th:classappend="${#fields.hasErrors('clinica')} ? 'campo-invalido'">
+                <p class="erro-campo" th:if="${#fields.hasErrors('clinica')}" th:errors="*{clinica}"></p>
+            </div>
+
+            <div>
+                <label for="tipoPagamento">Tipo de pagamento *</label>
+                <select id="tipoPagamento" th:field="*{tipoPagamento}">
+                    <option value="">Selecione</option>
+                    <option th:each="t : ${tiposPagamento}" th:value="${t.key}" th:text="${t.value}">Tipo</option>
+                </select>
+            </div>
+
+            <div>
+                <label for="valor">Valor (R$) *</label>
+                <input type="number" id="valor" step="0.01" th:field="*{valor}"
+                       th:classappend="${#fields.hasErrors('valor')} ? 'campo-invalido'">
+                <p class="erro-campo" th:if="${#fields.hasErrors('valor')}" th:errors="*{valor}"></p>
+            </div>
+
+            <div>
+                <label for="dataPagamento">Data do pagamento</label>
+                <input type="date" id="dataPagamento" th:field="*{dataPagamento}">
+                <p class="ajuda">Em branco, vale a data de hoje.</p>
+            </div>
+        </div>
+
+        <div class="rodape-form">
+            <button type="submit" class="botao botao-principal">Registrar pagamento</button>
+        </div>
+    </form>
+
+    <h2>Faturamento por clínica e tipo</h2>
+    <form th:action="@{/portal/financeiro}" method="get" style="margin-bottom:20px">
+        <div style="display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap">
+            <div>
+                <label for="inicio">De</label>
+                <input type="date" id="inicio" name="inicio" th:value="${inicio}">
+            </div>
+            <div>
+                <label for="fim">Até</label>
+                <input type="date" id="fim" name="fim" th:value="${fim}">
+            </div>
+            <button type="submit" class="botao botao-secundario">Aplicar</button>
+        </div>
+    </form>
+
+    <p class="aviso aviso-erro" th:if="${erroFiltro}" th:text="${erroFiltro}">Erro no filtro.</p>
+
+    <div class="quadro" th:unless="${erroFiltro}">
+        <table>
+            <thead>
+            <tr>
+                <th>Clínica</th>
+                <th>Tipo de pagamento</th>
+                <th>Pagamentos</th>
+                <th>Valor total</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="l : ${linhas}"
+                th:classappend="${l.subtotal} ? 'linha-subtotal' : (${l.totalGeral} ? 'linha-total' : '')">
+                <td th:text="${l.totalGeral} ? 'Total geral' : ${l.clinica}">Clínica</td>
+                <td th:text="${l.detalhe}
+                             ? (${tiposPagamento[l.tipoPagamento]} ?: ${l.tipoPagamento})
+                             : (${l.subtotal} ? 'Subtotal da clínica' : '')">Tipo</td>
+                <td th:text="${l.qtdPagamentos}">0</td>
+                <td th:text="'R$ ' + ${#numbers.formatDecimal(l.valorTotal, 1, 'POINT', 2, 'COMMA')}">R$ 0,00</td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(linhas)}">
+                <td colspan="4" class="vazio">
+                    <strong>Nenhum pagamento no período.</strong>
+                    <p>Escolha outro período ou registre um pagamento de consulta realizada.</p>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</main>
+
+</body>
+</html>

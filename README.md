@@ -291,7 +291,20 @@ O schema pertence ao Flyway (`kuravet/src/main/resources/db/migration/`). Nenhum
 
 **Trigger:** `TRG_AUDITORIA_CONSULTA` (`AFTER INSERT OR UPDATE OR DELETE ... FOR EACH ROW` em `CONSULTA`) apenas dispara; a regra fica em `PKG_KV_AUDITORIA`, que grava OLD/NEW em JSON em `AUDITORIA_LOG`. Se a auditoria falhar, a alteração na consulta é bloqueada. Como o Oracle não falha um `CREATE` com erro de compilação, o último bloco da V9 confere `USER_OBJECTS` e lança `ORA-20900` com os nomes dos objetos inválidos.
 
-> A aplicação Java **ainda não chama** as procedures e functions dos packages; o que a aplicação exercita hoje é a trigger de auditoria, a cada alteração em `CONSULTA` (aprovar, recusar, diagnosticar, cancelar).
+> A aplicação exercita a trigger de auditoria a cada alteração em `CONSULTA` (aprovar, recusar, diagnosticar, cancelar) e chama diretamente duas procedures na tela Financeiro (ver [Procedures chamadas pela aplicação](#procedures-chamadas-pela-aplicação)). As demais rotinas dos packages ainda não são chamadas pelo Java.
+
+### Procedures chamadas pela aplicação
+
+A tela **Financeiro** do portal (`/portal/financeiro`, perfil `VETERINARIO`) usa `FinanceiroProcedureRepository` (`SimpleJdbcCall` com o package em `withCatalogName`, `withoutProcedureColumnMetaDataAccess` e os parâmetros declarados na ordem da spec) e `FinanceiroService`, que abre a transação com `@Transactional`, porque as procedures não fazem `COMMIT`.
+
+| Procedure | Assinatura | Uso |
+|---|---|---|
+| `PKG_KV_CARGA.PRC_CARGA_PAGAMENTO` | `p_id_consulta IN NUMBER`, `p_clinica IN VARCHAR2`, `p_tipo_pagamento IN VARCHAR2`, `p_valor IN NUMBER`, `p_data_pagamento IN DATE`, `p_id_pagamento OUT NUMBER` (tipos `%TYPE` de `FATO_PAGAMENTO`) | Formulário "Registrar pagamento"; o id devolvido aparece em *"Pagamento nº X registrado."* |
+| `PKG_KV_RELATORIO.PRC_FATURAMENTO_CLINICA_TIPO` | `p_data_inicio IN DATE`, `p_data_fim IN DATE`, `p_cursor OUT SYS_REFCURSOR` | Tabela de faturamento do período (padrão: ano corrente) |
+
+O cursor do faturamento (lido como `Types.REF_CURSOR` com `RowMapper`, sem `OracleTypes`) traz `CLINICA`, `TIPO_PAGAMENTO`, `QTD_PAGAMENTOS`, `VALOR_TOTAL` e `NIVEL` (`GROUPING_ID` do `ROLLUP`): `0` = detalhe, `1` = subtotal da clínica (exibido em negrito) e `3` = total geral (em destaque).
+
+**Regras e erros.** As regras de pagamento ficam no PL/SQL (consulta precisa estar `REALIZADA`, valor > 0, tipo ∈ {Pix, Cartao de Credito, Cartao de Debito, Dinheiro}, clínica obrigatória); o Java não as repete e só valida formato (consulta selecionada, limites das colunas) e o período `início ≤ fim` antes de chamar o banco. `OracleErroNegocioTradutor` percorre as causas até a `SQLException`: códigos `20000..20999` viram `RegraDeNegocioException` com a primeira linha da mensagem, sem o prefixo `ORA-200xx:`, mostrada no próprio formulário. Dois casos especiais: `ORA-20013` (nenhum pagamento no período) vira o estado vazio da tabela, e `ORA-20099` (erro inesperado do package) vira uma mensagem genérica, para não exibir o ORA original. Outros erros sobem sem tradução e caem na página de erro padrão.
 
 Os scripts avulsos da disciplina (DDL, carga, packages, evidências e exportação JSON) ficam no repositório [`database`](https://github.com/KuraVet-Challenge-2026/database), executados em um schema Oracle separado. Neste backend, os mesmos objetos chegam ao schema da aplicação **somente** pelas migrations V8 e V9.
 
@@ -354,6 +367,8 @@ Duas cadeias de filtros isoladas, em `SecurityConfig`:
 | `GET /portal/triagens` | Fila de triagens, das mais urgentes para as menos (e, no mesmo nível, das mais recentes). Filtro opcional `?urgencia=` (`EMERGENCIA`, `ALTA`, `MODERADA`, `BAIXA`) ou `?urgentes=true` (ALTA + EMERGENCIA). Mostra data/hora, pet, tutor, urgência (selo colorido), sintomas, método ("IA generativa" ou "Palavras-chave") e link "Ver" |
 | `GET /portal/triagens/{id}` | Detalhe: relato do tutor, sintomas, urgência, recomendação, "Por que esta classificação?" com as regras aplicadas, método de interpretação e aviso de que a triagem é orientativa; atalhos para o histórico do pet e para as consultas |
 | `GET /portal/pets/{id}/triagens` | Histórico de triagens do pet, da mais recente para a mais antiga, com urgência, sintomas e data |
+| `GET /portal/financeiro` | Financeiro: formulário de pagamento (consultas `REALIZADA`) e faturamento por clínica e tipo, com filtro `?inicio=&fim=` (padrão: ano corrente) |
+| `POST /portal/financeiro/pagamentos` | Registra o pagamento via `PKG_KV_CARGA.PRC_CARGA_PAGAMENTO` |
 
 As telas de triagem são somente de visualização: a triagem é criada pela API (app do tutor) e o portal apenas exibe o que foi gravado, sem chamar a LLM. O painel traz o card "Triagens urgentes (7 dias)", com a quantidade de triagens ALTA e EMERGENCIA dos últimos 7 dias e link para a fila filtrada.
 
@@ -551,7 +566,7 @@ Resposta `201 Created`:
 |---|---|---|
 | **Java Advanced** | Backend Spring Boot com portal Thymeleaf, API REST, segurança por perfil, máquina de estados e Flyway | [`kuravet/`](kuravet/) |
 | **DevOps** | Pipeline de CI/CD no Azure Pipelines, deploy em Azure Web App via Variable Group e health check, infraestrutura por scripts | [`azure-pipelines.yml`](azure-pipelines.yml), [`infra/`](infra/) |
-| **Banco de Dados** | Tabelas de apoio (V8) e packages PL/SQL com trigger de auditoria (V9) no schema do backend, entregues por migration. A trigger é exercitada pelas telas e endpoints que alteram consultas; a chamada direta das procedures pela aplicação ainda não existe | [`V8`](kuravet/src/main/resources/db/migration/V8__banco_tabelas_apoio.sql), [`V9`](kuravet/src/main/resources/db/migration/V9__banco_packages_e_trigger.sql), [repo `database`](https://github.com/KuraVet-Challenge-2026/database) |
+| **Banco de Dados** | Tabelas de apoio (V8) e packages PL/SQL com trigger de auditoria (V9) no schema do backend, entregues por migration. A trigger é exercitada pelas telas e endpoints que alteram consultas; a tela Financeiro do portal chama `PKG_KV_CARGA.PRC_CARGA_PAGAMENTO` e `PKG_KV_RELATORIO.PRC_FATURAMENTO_CLINICA_TIPO` (`SYS_REFCURSOR`) e traduz os erros `ORA-200xx` em mensagens na tela | [`V8`](kuravet/src/main/resources/db/migration/V8__banco_tabelas_apoio.sql), [`V9`](kuravet/src/main/resources/db/migration/V9__banco_packages_e_trigger.sql), [`FinanceiroProcedureRepository`](kuravet/src/main/java/br/com/fiap/kuravet/repository/procedure/FinanceiroProcedureRepository.java), [repo `database`](https://github.com/KuraVet-Challenge-2026/database) |
 | **Inteligência Artificial** | Triagem explicável: Gemini extrai sintomas, motor de regras R1–R10 decide a urgência, fallback por palavras-chave; orientação personalizada ao tutor com histórico do pet, gerada por IA com fallback por modelo fixo | [`kuravet/src/main/java/br/com/fiap/kuravet/ia/`](kuravet/src/main/java/br/com/fiap/kuravet/ia/), endpoint `POST /api/triagens` |
 | **Mobile** | O app do tutor (React Native) consome a API `/api/**` com HTTP Basic: cadastro, login, pets, consultas e triagem | `kuravet/src/main/java/br/com/fiap/kuravet/controller/api/`; repositório do app: `<PREENCHER>` |
 | **.NET** | `<PREENCHER: como a disciplina foi integrada>` | `<PREENCHER: link do repositório>` |
@@ -571,16 +586,17 @@ cd kuravet
 ./mvnw clean verify          # Linux / macOS
 ```
 
-**Resultado atual: 203 testes, 0 falhas, 0 erros** (execução local de `./mvnw clean verify`). Nenhum teste precisa de Oracle nem de internet; o pipeline roda exatamente este comando.
+**Resultado atual: 223 testes, 0 falhas, 0 erros** (execução local de `./mvnw clean verify`). Nenhum teste precisa de Oracle nem de internet; o pipeline roda exatamente este comando.
 
 | Área | Classes de teste |
 |---|---|
 | Motor de regras da triagem (R1–R10) | `MotorRegrasTriagemTest` |
 | Extração por palavras-chave, Gemini e fallback | `ExtratorPalavrasChaveTest`, `ExtratorGeminiTest`, `ExtratorComFallbackTest` |
 | Orientação personalizada (Gemini, modelo fixo e fallback) | `GeradorOrientacaoGeminiTest`, `GeradorOrientacaoComFallbackTest` |
-| Serviços (máquina de estados, ownership, triagem) | `ConsultaServiceTest`, `PetServiceTest`, `TriagemServiceTest` |
+| Serviços (máquina de estados, ownership, triagem, financeiro) | `ConsultaServiceTest`, `PetServiceTest`, `TriagemServiceTest`, `FinanceiroServiceTest` |
+| Tradução de erros ORA-200xx dos packages | `OracleErroNegocioTradutorTest` |
 | Segurança e autorização da API | `ConsultaControllerSecurityTest`, `TriagemControllerSecurityTest` |
-| Portal web (painel, consultas, pets, triagem e área do tutor) | `PortalWebControllerTest`, `TriagemWebControllerTest`, `TutorWebControllerTest`, `TutorTriagemWebControllerTest` |
+| Portal web (painel, consultas, pets, triagem, financeiro e área do tutor) | `PortalWebControllerTest`, `TriagemWebControllerTest`, `FinanceiroWebControllerTest`, `TutorWebControllerTest`, `TutorTriagemWebControllerTest` |
 | Redirecionamento do login por perfil | `RedirecionamentoPorPerfilHandlerTest` |
 | Health check público | `HealthEndpointSecurityTest` |
 
