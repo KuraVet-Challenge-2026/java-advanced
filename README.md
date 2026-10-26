@@ -101,7 +101,7 @@ Se a LLM estiver desligada, sem chave ou falhar (timeout, erro de rede, resposta
 | Segurança | Spring Security (form login no portal, HTTP Basic stateless na API) |
 | Validação | Jakarta Bean Validation |
 | Observabilidade | Spring Boot Actuator (apenas `/actuator/health`) |
-| IA | Google Gemini (`gemini-2.5-flash` por padrão) com fallback por palavras-chave |
+| IA | Google Gemini (`gemini-3.8-flash` por padrão) com fallback por palavras-chave |
 | Build | Maven (Maven Wrapper) |
 | Utilitários | Lombok |
 | Nuvem e CI/CD | Azure Pipelines, Azure Web App Linux (Java 21), Azure CLI |
@@ -506,7 +506,7 @@ A coluna `METODO_EXTRACAO` da tabela TRIAGEM guarda o método que **realmente** 
 | `kuravet.ia.llm.enabled` | `${LLM_ENABLED:true}` |
 | `kuravet.ia.llm.api-key` | `${LLM_API_KEY:}` (vazia = só palavras-chave) |
 | `kuravet.ia.llm.base-url` | `https://generativelanguage.googleapis.com/v1beta` |
-| `kuravet.ia.llm.model` | `${LLM_MODEL:gemini-2.5-flash}` |
+| `kuravet.ia.llm.model` | `${LLM_MODEL:gemini-3.8-flash}` |
 | `kuravet.ia.llm.timeout-ms` | `8000` |
 
 ### Orientação personalizada
