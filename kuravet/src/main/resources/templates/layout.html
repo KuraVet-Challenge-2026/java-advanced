@@ -22,6 +22,7 @@
                 <a th:href="@{/portal/solicitacoes}" th:classappend="${pagina == 'solicitacoes'} ? 'ativo'">Solicitações</a>
                 <a th:href="@{/portal/consultas}" th:classappend="${pagina == 'consultas'} ? 'ativo'">Consultas</a>
                 <a th:href="@{/portal/triagens}" th:classappend="${pagina == 'triagens'} ? 'ativo'">Triagens</a>
+                <a th:href="@{/portal/financeiro}" th:classappend="${pagina == 'financeiro'} ? 'ativo'">Financeiro</a>
             </th:block>
             <th:block sec:authorize="hasRole('TUTOR')">
                 <a th:href="@{/tutor/consultas}" th:classappend="${pagina == 'tutor-consultas'} ? 'ativo'">Minhas consultas</a>
