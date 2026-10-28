@@ -122,7 +122,9 @@ stages:
                       ]
 
                 # OneDeploy (--type jar) em vez de ZIP Deploy: o rsync do Kudu
-                # travava no AzureWebApp@1. --timeout esta em milissegundos.
+                # travava no AzureWebApp@1. --async true retorna assim que o jar
+                # e enviado; a espera pelo reinicio fica no health check abaixo.
+                # O startup file e configuracao fixa do Web App (infra/04).
                 - task: AzureCLI@2
                   displayName: "Publicar app.jar no Web App (OneDeploy)"
                   inputs:
@@ -131,21 +133,24 @@ stages:
                     scriptLocation: inlineScript
                     inlineScript: |
                       set -euo pipefail
-                      az webapp config set --resource-group "$(resourceGroup)" --name "$(webAppName)" --startup-file "java -jar /home/site/wwwroot/app.jar" --output none
-                      az webapp deploy --resource-group "$(resourceGroup)" --name "$(webAppName)" --src-path "$(Pipeline.Workspace)/kuravet-jar/app.jar" --type jar --restart true --timeout 600000
+                      az webapp deploy --resource-group "$(resourceGroup)" --name "$(webAppName)" --src-path "$(Pipeline.Workspace)/kuravet-jar/app.jar" --type jar --restart true --async true
 
+                # Espera 90 s para o reinicio comecar (evita validar a versao
+                # antiga) e tenta por ate ~10 min. O corpo nao e impresso.
                 - bash: |
                     set -uo pipefail
                     corpo="$(mktemp)"
-                    for tentativa in $(seq 1 20); do
+                    echo "Aguardando 90 s para o reinicio do Web App comecar..."
+                    sleep 90
+                    for tentativa in $(seq 1 40); do
                       status="$(curl -s -o "$corpo" -w '%{http_code}' --max-time 10 "$(healthUrl)" || true)"
                       if [ "$status" = "200" ] && grep -q '"UP"' "$corpo"; then
                         echo "Health OK (HTTP 200, status UP) na tentativa $tentativa"
                         exit 0
                       fi
-                      echo "Tentativa $tentativa/20: HTTP $status, aguardando 15 s..."
+                      echo "Tentativa $tentativa/40: HTTP $status, aguardando 15 s..."
                       sleep 15
                     done
-                    echo "##vso[task.logissue type=error]Health check falhou: $(healthUrl) nao respondeu HTTP 200 com status UP apos 20 tentativas"
+                    echo "##vso[task.logissue type=error]Health check falhou: $(healthUrl) nao respondeu HTTP 200 com status UP apos 40 tentativas (~10 min apos o deploy)"
                     exit 1
                   displayName: "Verificar /actuator/health"
