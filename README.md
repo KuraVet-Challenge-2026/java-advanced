@@ -151,9 +151,11 @@ O CD só executa se o CI passou, a branch é `refs/heads/master` e o motivo do b
 
 1. Baixa o artefato `kuravet-jar`.
 2. Renomeia o jar para `app.jar`.
-3. `AzureAppServiceSettings@1`: aplica as app settings no Web App.
-4. `AzureCLI@2`: publica o `app.jar` via **OneDeploy** de forma assíncrona (`az webapp deploy --type jar --restart true --async true`): o comando retorna assim que o jar é enviado, sem esperar o site subir. O startup file não é definido aqui (é configuração fixa do Web App, feita pelo `infra/04`), o que evita um reinício extra; no plano B1, os reinícios seguidos estouravam o limite de 10 min de espera do `az webapp deploy`. O ZIP Deploy do `AzureWebApp@1` foi abandonado porque o rsync do Kudu travava.
-5. Aguarda 90 s para o reinício começar (e não validar a versão antiga) e verifica `/actuator/health` até 40 vezes, com 15 s de intervalo (~10 min); falha o stage se não obtiver HTTP 200 com `"UP"`.
+3. `AzureAppServiceSettings@1`: aplica as app settings no Web App, incluindo `WEBSITES_CONTAINER_START_TIME_LIMIT=900` (não sensível).
+4. `AzureCLI@2`: publica o `app.jar` via **OneDeploy** (`az webapp deploy --type jar --restart true --track-status false`): o comando envia o jar e reinicia o site, mas não acompanha o start. O startup file não é definido aqui (é configuração fixa do Web App, feita pelo `infra/04`), o que evita um reinício extra. O ZIP Deploy do `AzureWebApp@1` foi abandonado porque o rsync do Kudu travava.
+5. Aguarda 120 s para o reinício começar (e não validar a versão antiga) e verifica `/actuator/health` até 60 vezes, com 15 s de intervalo (~15 min); falha o stage se não obtiver HTTP 200 com `"UP"`.
+
+> **Por que o limite de start e a espera no health check:** no plano B1, o start do Spring Boot com Flyway fica perto do limite padrão de 230 s do App Service, que então reinicia o container em ciclo; por isso o limite sobe para 900 s. E o `az webapp deploy` falhava com "site failed to start within 10 mins" ao acompanhar esse start, então quem confirma o deploy é o health check do pipeline.
 
 **Segredos e configuração**
 
@@ -193,7 +195,7 @@ Sem o `00` carregado, cada script para com a mensagem `Rode primeiro: . .\00-Var
 | `01-ResourceGroup.ps1` | Cria o Resource Group |
 | `02-AppServicePlan.ps1` | Cria o App Service Plan Linux, SKU B1 |
 | `03-WebApp.ps1` | Cria o Web App com runtime `JAVA:21-java21` e ativa HTTPS only |
-| `04-ConfigurarWebApp.ps1` | Liga o Always On, desabilita FTP/FTPS e define o startup file `java -jar /home/site/wwwroot/app.jar` (o pipeline publica o jar com esse nome) |
+| `04-ConfigurarWebApp.ps1` | Liga o Always On, desabilita FTP/FTPS, define o startup file `java -jar /home/site/wwwroot/app.jar` (o pipeline publica o jar com esse nome) e `WEBSITES_CONTAINER_START_TIME_LIMIT=900` (start do Spring Boot com Flyway no B1 pode passar dos 230 s padrão) |
 | `99-RemoverRecursos.ps1` | Apaga o Resource Group inteiro, após confirmar digitando o nome dele |
 
 **Validação:**

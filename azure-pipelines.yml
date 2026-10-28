@@ -112,18 +112,22 @@ stages:
                     resourceGroupName: $(resourceGroup)
                     # O App Service Linux encaminha as requisicoes para a porta 80;
                     # SERVER_PORT faz o Spring Boot escutar nela.
+                    # WEBSITES_CONTAINER_START_TIME_LIMIT (s) sobe o limite padrao
+                    # de 230 s: no B1 o start com Flyway fica perto dele.
                     appSettings: |
                       [
                         { "name": "DB_URL", "value": "$(DB_URL)", "slotSetting": false },
                         { "name": "DB_USERNAME", "value": "$(DB_USERNAME)", "slotSetting": false },
                         { "name": "DB_PASSWORD", "value": "$(DB_PASSWORD)", "slotSetting": false },
                         { "name": "LLM_API_KEY", "value": "$(LLM_API_KEY)", "slotSetting": false },
-                        { "name": "SERVER_PORT", "value": "80", "slotSetting": false }
+                        { "name": "SERVER_PORT", "value": "80", "slotSetting": false },
+                        { "name": "WEBSITES_CONTAINER_START_TIME_LIMIT", "value": "900", "slotSetting": false }
                       ]
 
                 # OneDeploy (--type jar) em vez de ZIP Deploy: o rsync do Kudu
-                # travava no AzureWebApp@1. --async true retorna assim que o jar
-                # e enviado; a espera pelo reinicio fica no health check abaixo.
+                # travava no AzureWebApp@1. --track-status false nao acompanha o
+                # start do site (que estourava os 10 min do az); a confirmacao
+                # fica no health check abaixo.
                 # O startup file e configuracao fixa do Web App (infra/04).
                 - task: AzureCLI@2
                   displayName: "Publicar app.jar no Web App (OneDeploy)"
@@ -133,24 +137,24 @@ stages:
                     scriptLocation: inlineScript
                     inlineScript: |
                       set -euo pipefail
-                      az webapp deploy --resource-group "$(resourceGroup)" --name "$(webAppName)" --src-path "$(Pipeline.Workspace)/kuravet-jar/app.jar" --type jar --restart true --async true
+                      az webapp deploy --resource-group "$(resourceGroup)" --name "$(webAppName)" --src-path "$(Pipeline.Workspace)/kuravet-jar/app.jar" --type jar --restart true --track-status false
 
-                # Espera 90 s para o reinicio comecar (evita validar a versao
-                # antiga) e tenta por ate ~10 min. O corpo nao e impresso.
+                # Espera 120 s para o reinicio comecar (evita validar a versao
+                # antiga) e tenta por ate ~15 min. O corpo nao e impresso.
                 - bash: |
                     set -uo pipefail
                     corpo="$(mktemp)"
-                    echo "Aguardando 90 s para o reinicio do Web App comecar..."
-                    sleep 90
-                    for tentativa in $(seq 1 40); do
+                    echo "Aguardando 120 s para o reinicio do Web App comecar..."
+                    sleep 120
+                    for tentativa in $(seq 1 60); do
                       status="$(curl -s -o "$corpo" -w '%{http_code}' --max-time 10 "$(healthUrl)" || true)"
                       if [ "$status" = "200" ] && grep -q '"UP"' "$corpo"; then
                         echo "Health OK (HTTP 200, status UP) na tentativa $tentativa"
                         exit 0
                       fi
-                      echo "Tentativa $tentativa/40: HTTP $status, aguardando 15 s..."
+                      echo "Tentativa $tentativa/60: HTTP $status, aguardando 15 s..."
                       sleep 15
                     done
-                    echo "##vso[task.logissue type=error]Health check falhou: $(healthUrl) nao respondeu HTTP 200 com status UP apos 40 tentativas (~10 min apos o deploy)"
+                    echo "##vso[task.logissue type=error]Health check falhou: $(healthUrl) nao respondeu HTTP 200 com status UP apos 60 tentativas (~15 min apos o deploy)"
                     exit 1
                   displayName: "Verificar /actuator/health"
