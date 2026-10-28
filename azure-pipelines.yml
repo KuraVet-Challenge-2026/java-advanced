@@ -121,15 +121,18 @@ stages:
                         { "name": "SERVER_PORT", "value": "80", "slotSetting": false }
                       ]
 
-                - task: AzureWebApp@1
-                  displayName: "Publicar app.jar no Web App"
+                # OneDeploy (--type jar) em vez de ZIP Deploy: o rsync do Kudu
+                # travava no AzureWebApp@1. --timeout esta em milissegundos.
+                - task: AzureCLI@2
+                  displayName: "Publicar app.jar no Web App (OneDeploy)"
                   inputs:
                     azureSubscription: ${{ variables.azureSubscription }}
-                    appType: webAppLinux
-                    appName: $(webAppName)
-                    package: $(Pipeline.Workspace)/kuravet-jar/app.jar
-                    runtimeStack: 'JAVA|21-java21'
-                    startUpCommand: 'java -jar /home/site/wwwroot/app.jar'
+                    scriptType: bash
+                    scriptLocation: inlineScript
+                    inlineScript: |
+                      set -euo pipefail
+                      az webapp config set --resource-group "$(resourceGroup)" --name "$(webAppName)" --startup-file "java -jar /home/site/wwwroot/app.jar" --output none
+                      az webapp deploy --resource-group "$(resourceGroup)" --name "$(webAppName)" --src-path "$(Pipeline.Workspace)/kuravet-jar/app.jar" --type jar --restart true --timeout 600000
 
                 - bash: |
                     set -uo pipefail

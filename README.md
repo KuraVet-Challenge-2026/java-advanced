@@ -152,7 +152,7 @@ O CD só executa se o CI passou, a branch é `refs/heads/master` e o motivo do b
 1. Baixa o artefato `kuravet-jar`.
 2. Renomeia o jar para `app.jar`.
 3. `AzureAppServiceSettings@1`: aplica as app settings no Web App.
-4. `AzureWebApp@1`: publica o `app.jar` (`JAVA|21-java21`, startup `java -jar /home/site/wwwroot/app.jar`).
+4. `AzureCLI@2`: define o startup `java -jar /home/site/wwwroot/app.jar` (`az webapp config set`) e publica o `app.jar` via **OneDeploy** (`az webapp deploy --type jar --restart true`, timeout de 10 min). O ZIP Deploy do `AzureWebApp@1` foi abandonado porque o rsync do Kudu travava.
 5. Verifica `/actuator/health` até 20 vezes, com 15 s de intervalo; falha o stage se não obtiver HTTP 200 com `"UP"`.
 
 **Segredos e configuração**
