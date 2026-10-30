@@ -48,7 +48,7 @@ public class GeradorOrientacaoGemini implements GeradorOrientacao {
     @Override
     public String gerar(ContextoOrientacao contexto) {
         ObjectNode requisicao = cliente.novaRequisicao(INSTRUCAO_SISTEMA, montarConteudo(contexto));
-        ObjectNode config = requisicao.putObject("generationConfig");
+        ObjectNode config = cliente.configuracaoGeracao(requisicao);
         config.put("temperature", 0.3);
         config.put("responseMimeType", "text/plain");
 

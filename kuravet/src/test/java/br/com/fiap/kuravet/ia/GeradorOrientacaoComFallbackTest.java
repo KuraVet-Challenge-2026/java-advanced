@@ -26,7 +26,7 @@ class GeradorOrientacaoComFallbackTest {
     private GeradorOrientacaoGemini gemini;
 
     private GeradorOrientacaoComFallback criar(boolean habilitada, String chave) {
-        GeminiProperties propriedades = new GeminiProperties(habilitada, chave, "http://localhost", "modelo", 1000);
+        GeminiProperties propriedades = new GeminiProperties(habilitada, chave, "http://localhost", "modelo", 1000, "");
         return new GeradorOrientacaoComFallback(propriedades, gemini, new GeradorOrientacaoModeloFixo());
     }
 

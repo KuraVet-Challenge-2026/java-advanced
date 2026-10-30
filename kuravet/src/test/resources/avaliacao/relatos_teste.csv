@@ -1,0 +1,21 @@
+id;relato;especie;idadeAnos;urgenciaEsperada;autor
+T01;socorro, minha cachorra ta tendo uns tremores fortes, se debatendo no chao e babando, nao responde quando eu chamo;Cachorro;6;EMERGENCIA;<revisor>
+T02;achei o pacote de uva passa rasgado no chao e ele tava comendo, foi tipo uns 20 minutos atras;Cachorro;2;EMERGENCIA;<revisor>
+T03;o Bob ta fazendo um chiado estranho e nao consegue puxar o ar direito, deitou de lado esticando o pescoço;Cachorro;14;EMERGENCIA;<revisor>
+T04;deixaram o balde com água sanitária no chão e pegamos ela lambendo;Cachorro;5;EMERGENCIA;<revisor>
+T05;ele nao fez xixi desde ontem, fica tentando e nao sai nada;Gato;7;EMERGENCIA;<revisor>
+T06;ele nao fez xixi desde ontem, fica tentando e nao sai nada;Cachorro;7;ALTA;<revisor>
+T07;desde cedo ele botou a ração toda pra fora e o cocô tá parecendo água;Cachorro;4;ALTA;<revisor>
+T08;ta quentinho, com a orelha pelando e jururu o dia todo, nem quis passear;Cachorro;5;ALTA;<revisor>
+T09;faz uma semana que ela fica tossindo, parece que vai engasgar mas nao sai nada;Cachorro;7;ALTA;<revisor>
+T10;vomitou duas vezes hoje de manhã, de resto parece bem;Cachorro;12;ALTA;<revisor>
+T11;vomitou duas vezes hoje de manhã, de resto parece bem;Cachorro;4;MODERADA;<revisor>
+T12;ta comendo bem menos que o normal faz 2 dias, mas ta brincando;Gato;6;MODERADA;<revisor>
+T13;o filhote apareceu com um machucadinho vermelho na pata e fica lambendo;Cachorro;0;MODERADA;<revisor>
+T14;Bom dia! Ontem levei ela no parque, brincou bastante com outros cachorros e hoje acordou mancando um pouco da pata de trás. Tá comendo e bebendo água normal;Cachorro;4;MODERADA;<revisor>
+T15;ela pulou do armario e caiu de mau jeito, nao ta sangrando nem nada, so ficou meio quietinha;Gato;2;MODERADA;<revisor>
+T16;faz duas semanas q ela vive se coçando atrás da orelha;Gato;3;BAIXA;<revisor>
+T17;espirrou umas três vezes depois que passei perfume, mas ta respirando normal;Gato;5;BAIXA;<revisor>
+T18;notei que ele ta soltando muito pelo esses dias, de resto ta otimo;Cachorro;11;BAIXA;<revisor>
+T19;posso dar dipirona pra ele se um dia tiver dor? hoje ele ta bem, eh so pra saber;Cachorro;6;BAIXA;<revisor>
+T20;o olho dele ta lacrimejando um pouco, fora isso ta normal;Gato;1;BAIXA;<revisor>

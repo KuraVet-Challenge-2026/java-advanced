@@ -66,7 +66,7 @@ class TriagemServiceTest {
     @BeforeEach
     void setUp() {
         // LLM desligada: extrator e orientacao caem direto nas palavras-chave e no modelo fixo, sem rede.
-        GeminiProperties semLlm = new GeminiProperties(false, "", "http://localhost", "modelo", 1000);
+        GeminiProperties semLlm = new GeminiProperties(false, "", "http://localhost", "modelo", 1000, "");
         extratorSemLlm = new ExtratorComFallback(semLlm,
                 org.mockito.Mockito.mock(ExtratorGemini.class), new ExtratorPalavrasChave());
         GeradorOrientacaoComFallback orientacaoSemLlm = new GeradorOrientacaoComFallback(semLlm,

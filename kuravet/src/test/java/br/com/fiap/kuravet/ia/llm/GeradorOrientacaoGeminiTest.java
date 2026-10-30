@@ -40,7 +40,7 @@ class GeradorOrientacaoGeminiTest {
     void setUp() {
         RestClient.Builder builder = RestClient.builder();
         server = MockRestServiceServer.bindTo(builder).build();
-        GeminiProperties propriedades = new GeminiProperties(true, CHAVE_FALSA, BASE_URL, "modelo-teste", 1000);
+        GeminiProperties propriedades = new GeminiProperties(true, CHAVE_FALSA, BASE_URL, "modelo-teste", 1000, "");
         gerador = new GeradorOrientacaoGemini(propriedades, builder.build());
     }
 
