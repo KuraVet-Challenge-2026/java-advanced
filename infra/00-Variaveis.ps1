@@ -9,6 +9,6 @@
 # vem do Variable Group do Azure DevOps e sao aplicadas pelo pipeline de CD.
 
 $RG     = "rg-kuravet-rm562396"
-$LOCAL  = "brazilsouth"   # se a politica da assinatura bloquear, usar mexicocentral
+$LOCAL  = "brazilsouth"
 $PLANO  = "plan-kuravet-rm562396"
 $WEBAPP = "kuravet-rm562396"
