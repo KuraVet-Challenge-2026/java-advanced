@@ -13,6 +13,8 @@ import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
 import tools.jackson.databind.node.ObjectNode;
 
+import java.net.SocketTimeoutException;
+import java.net.http.HttpTimeoutException;
 import java.time.Duration;
 
 /**
@@ -55,6 +57,18 @@ public class ClienteGemini {
         return raiz;
     }
 
+    /**
+     * Cria o generationConfig da requisicao. Com nivel de raciocinio configurado, envia so
+     * thinkingConfig.thinkingLevel (nunca thinkingBudget junto: a API responde 400).
+     */
+    public ObjectNode configuracaoGeracao(ObjectNode requisicao) {
+        ObjectNode config = requisicao.putObject("generationConfig");
+        if (properties.temThinkingLevel()) {
+            config.putObject("thinkingConfig").put("thinkingLevel", properties.thinkingLevel().strip());
+        }
+        return config;
+    }
+
     /** Relato entre {@code <relato></relato>}; o delimitador nao pode ser fechado de dentro do relato. */
     public static String relatoDelimitado(String relato) {
         String relatoSeguro = relato == null ? "" : relato.replace("</relato>", "").replace("<relato>", "");
@@ -73,12 +87,33 @@ public class ClienteGemini {
                     .body(String.class);
         } catch (RestClientResponseException e) {
             // A mensagem da excecao original inclui o corpo da resposta: nao propagar.
-            throw new FalhaLlmException("HTTP " + e.getStatusCode().value());
+            throw new FalhaLlmException(motivoHttp(e.getStatusCode().value()));
         } catch (RestClientException e) {
+            if (causadoPorTimeout(e)) {
+                throw new FalhaLlmException("timeout após " + properties.timeoutMs() + " ms");
+            }
             throw new FalhaLlmException("erro de comunicação (" + e.getClass().getSimpleName() + ")");
         }
 
         return textoDoCandidato(resposta);
+    }
+
+    private static String motivoHttp(int status) {
+        return switch (status) {
+            case 400 -> "HTTP 400 (requisição rejeitada)";
+            case 429 -> "HTTP 429 (cota excedida)";
+            case 503 -> "HTTP 503 (modelo indisponível)";
+            default -> "HTTP " + status;
+        };
+    }
+
+    private static boolean causadoPorTimeout(Throwable erro) {
+        for (Throwable causa = erro; causa != null; causa = causa.getCause()) {
+            if (causa instanceof SocketTimeoutException || causa instanceof HttpTimeoutException) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private String textoDoCandidato(String resposta) {

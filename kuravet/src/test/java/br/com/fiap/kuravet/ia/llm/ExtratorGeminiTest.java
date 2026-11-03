@@ -34,7 +34,7 @@ class ExtratorGeminiTest {
     void setUp() {
         RestClient.Builder builder = RestClient.builder();
         server = MockRestServiceServer.bindTo(builder).build();
-        GeminiProperties propriedades = new GeminiProperties(true, CHAVE_FALSA, BASE_URL, "modelo-teste", 1000);
+        GeminiProperties propriedades = new GeminiProperties(true, CHAVE_FALSA, BASE_URL, "modelo-teste", 1000, "");
         extrator = new ExtratorGemini(propriedades, builder.build());
     }
 

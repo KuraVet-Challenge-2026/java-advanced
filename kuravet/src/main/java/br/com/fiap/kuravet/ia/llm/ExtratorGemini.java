@@ -69,7 +69,7 @@ public class ExtratorGemini implements ExtratorSintomas {
 
         ObjectNode raiz = cliente.novaRequisicao(instrucao, ClienteGemini.relatoDelimitado(relato));
 
-        ObjectNode config = raiz.putObject("generationConfig");
+        ObjectNode config = cliente.configuracaoGeracao(raiz);
         config.put("temperature", 0);
         config.put("responseMimeType", "application/json");
 

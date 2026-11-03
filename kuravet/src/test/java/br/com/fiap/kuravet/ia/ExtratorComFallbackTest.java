@@ -36,7 +36,7 @@ class ExtratorComFallbackTest {
     }
 
     private ExtratorComFallback criar(boolean habilitada, String chave) {
-        GeminiProperties propriedades = new GeminiProperties(habilitada, chave, "http://localhost", "modelo", 1000);
+        GeminiProperties propriedades = new GeminiProperties(habilitada, chave, "http://localhost", "modelo", 1000, "");
         return new ExtratorComFallback(propriedades, gemini, palavrasChave);
     }
 

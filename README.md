@@ -508,8 +508,9 @@ A coluna `METODO_EXTRACAO` da tabela TRIAGEM guarda o método que **realmente** 
 | `kuravet.ia.llm.enabled` | `${LLM_ENABLED:true}` |
 | `kuravet.ia.llm.api-key` | `${LLM_API_KEY:}` (vazia = só palavras-chave) |
 | `kuravet.ia.llm.base-url` | `https://generativelanguage.googleapis.com/v1beta` |
-| `kuravet.ia.llm.model` | `${LLM_MODEL:gemini-3.8-flash}` |
+| `kuravet.ia.llm.model` | `${LLM_MODEL:gemini-3.5-flash-lite}` |
 | `kuravet.ia.llm.timeout-ms` | `8000` |
+| `kuravet.ia.llm.thinking-level` | `${LLM_THINKING_LEVEL:low}` (vazio = não envia `thinkingConfig`) |
 
 ### Orientação personalizada
 

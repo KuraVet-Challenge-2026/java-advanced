@@ -14,12 +14,6 @@ foreach ($nome in @("RG", "WEBAPP")) {
 
 az webapp config set -g $RG -n $WEBAPP --always-on true --ftps-state Disabled
 
-# Startup file fixo: o deploy do pipeline publica o jar como app.jar em
-# /home/site/wwwroot. Fica aqui (uma vez, na criacao da infra) e nao no CD,
-# porque cada "az webapp config set" reinicia o Web App.
 az webapp config set -g $RG -n $WEBAPP --startup-file "java -jar /home/site/wwwroot/app.jar"
 
-# Limite de start do container em segundos. O start do Spring Boot com Flyway
-# no B1 pode passar do padrao de 230 s, e o App Service reinicia o container em
-# ciclo. O pipeline de CD tambem aplica este valor (nao e segredo).
 az webapp config appsettings set -g $RG -n $WEBAPP --settings WEBSITES_CONTAINER_START_TIME_LIMIT=900
