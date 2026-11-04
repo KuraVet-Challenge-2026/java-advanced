@@ -49,7 +49,7 @@ Plataforma de teleconsulta e triagem veterinária da **Clyvo Vet**: o tutor usa 
 | Vídeo DevOps | `<PREENCHER>` |
 | Projeto no Azure DevOps | `<PREENCHER>` |
 | Repositório de Banco de Dados | https://github.com/KuraVet-Challenge-2026/database |
-| Repositório Mobile | `<PREENCHER>` |
+| Repositório Mobile | https://github.com/KuraVet-Challenge-2026/mobile-application.git|
 | Repositório .NET | `<PREENCHER>` |
 | Repositório / evidências de QA | `<PREENCHER>` |
 
