@@ -46,8 +46,8 @@ Plataforma de teleconsulta e triagem veterinária da **Clyvo Vet**: o tutor usa 
 | Health check em produção | https://kuravet-rm562396.azurewebsites.net/actuator/health |
 | Repositório Java Advanced / DevOps | https://github.com/KuraVet-Challenge-2026/java-advanced |
 | Vídeo Java Advanced | https://youtu.be/FvEDx4b-8KY|
-| Vídeo DevOps | `<PREENCHER>` |
-| Projeto no Azure DevOps | `<PREENCHER>` |
+| Vídeo DevOps | https://www.youtube.com/watch?v=MmvhzjEnCKQ |
+| Projeto no Azure DevOps | https://dev.azure.com/KuraVet-Sprint4/ |
 | Repositório de Banco de Dados | https://github.com/KuraVet-Challenge-2026/database |
 | Repositório Mobile | https://github.com/KuraVet-Challenge-2026/mobile-application.git|
 | Repositório .NET | https://github.com/KuraVet-Challenge-2026/advanced-business-dotnet.git|
