@@ -17,11 +17,6 @@ import java.net.SocketTimeoutException;
 import java.net.http.HttpTimeoutException;
 import java.time.Duration;
 
-/**
- * Chamada comum ao generateContent do Google Gemini: monta o envelope da requisicao,
- * envia com a chave no header e devolve o texto do primeiro candidato.
- * Qualquer falha lanca {@link FalhaLlmException} com apenas o motivo.
- */
 @Component
 @EnableConfigurationProperties(GeminiProperties.class)
 public class ClienteGemini {
@@ -47,7 +42,6 @@ public class ClienteGemini {
         return RestClient.builder().requestFactory(factory).build();
     }
 
-    /** Envelope com a instrucao de sistema e uma mensagem do usuario; o chamador completa o generationConfig. */
     public ObjectNode novaRequisicao(String instrucaoSistema, String textoUsuario) {
         ObjectNode raiz = mapper.createObjectNode();
         raiz.putObject("systemInstruction").putArray("parts").addObject().put("text", instrucaoSistema);
@@ -57,10 +51,7 @@ public class ClienteGemini {
         return raiz;
     }
 
-    /**
-     * Cria o generationConfig da requisicao. Com nivel de raciocinio configurado, envia so
-     * thinkingConfig.thinkingLevel (nunca thinkingBudget junto: a API responde 400).
-     */
+    // Nao enviar thinkingBudget junto: a API responde 400
     public ObjectNode configuracaoGeracao(ObjectNode requisicao) {
         ObjectNode config = requisicao.putObject("generationConfig");
         if (properties.temThinkingLevel()) {
@@ -69,7 +60,7 @@ public class ClienteGemini {
         return config;
     }
 
-    /** Relato entre {@code <relato></relato>}; o delimitador nao pode ser fechado de dentro do relato. */
+    // Impede fechar o delimitador de dentro do relato
     public static String relatoDelimitado(String relato) {
         String relatoSeguro = relato == null ? "" : relato.replace("</relato>", "").replace("<relato>", "");
         return "<relato>" + relatoSeguro + "</relato>";
@@ -86,7 +77,7 @@ public class ClienteGemini {
                     .retrieve()
                     .body(String.class);
         } catch (RestClientResponseException e) {
-            // A mensagem da excecao original inclui o corpo da resposta: nao propagar.
+            // Nao propagar a mensagem: inclui o corpo da resposta
             throw new FalhaLlmException(motivoHttp(e.getStatusCode().value()));
         } catch (RestClientException e) {
             if (causadoPorTimeout(e)) {

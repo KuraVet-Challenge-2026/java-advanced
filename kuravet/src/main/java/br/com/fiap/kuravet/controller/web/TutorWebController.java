@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-// Area do tutor no portal (/tutor/** exige perfil TUTOR). A regra de cancelamento vive no ConsultaService.
 @Controller
 public class TutorWebController {
 
@@ -77,7 +76,6 @@ public class TutorWebController {
                         + " solicitada. Aguarde a aprovação da clínica.");
                 return "redirect:/tutor/consultas";
             } catch (RegraDeNegocioException e) {
-                // Ex.: o pet ja tem consulta ativa na data. Volta ao formulario com a mensagem, sem pagina de erro.
                 resultado.reject("regraDeNegocio", e.getMessage());
             }
         }

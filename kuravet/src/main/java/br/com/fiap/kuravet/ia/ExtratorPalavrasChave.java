@@ -12,14 +12,10 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/**
- * Extrai sintomas do relato por palavras-chave. E o fallback da extracao por LLM.
- * O relato e dado do tutor e nunca deve ser logado.
- */
 @Component
 public class ExtratorPalavrasChave implements ExtratorSintomas {
 
-    /** Termos ja normalizados (minusculas, sem acento). */
+    // Termos em minusculas e sem acento
     static final Map<Sintoma, List<String>> DICIONARIO = criarDicionario();
 
     private static final Set<String> NEGACOES = Set.of("nao", "nem", "sem");
@@ -107,10 +103,6 @@ public class ExtratorPalavrasChave implements ExtratorSintomas {
         return compilados;
     }
 
-    /**
-     * Termo do dicionario casado com limites de palavra. Termos que ja comecam com negacao
-     * ("nao come", "sem urinar") sao casados inteiros e nao passam pela regra de negacao.
-     */
     private record Termo(Pattern padrao, boolean jaNegado) {
 
         Termo(String termo) {

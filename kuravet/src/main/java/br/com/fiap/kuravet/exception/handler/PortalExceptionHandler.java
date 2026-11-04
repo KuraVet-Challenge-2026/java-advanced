@@ -38,7 +38,6 @@ public class PortalExceptionHandler {
         return "error/404";
     }
 
-    // ID nao numerico na URL (ex.: /portal/consultas/abc): para o usuario, e um registro inexistente.
     @ResponseStatus(HttpStatus.NOT_FOUND)
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public String enderecoInvalido(Model model) {
@@ -55,18 +54,12 @@ public class PortalExceptionHandler {
         return "erro";
     }
 
-    /**
-     * Qualquer erro nao previsto vira uma pagina amigavel com mensagem generica.
-     * O detalhe tecnico (stacktrace) vai apenas para o log, nunca para a tela.
-     */
     @ExceptionHandler(Exception.class)
     public ModelAndView erroInesperado(Exception ex, HttpServletRequest request) throws Exception {
-        // Acesso negado continua com o fluxo do Spring Security (403/login).
         if (ex instanceof AccessDeniedException) {
             throw ex;
         }
 
-        // Excecoes do Spring que ja carregam um status (ex.: 405) mantem o status original.
         HttpStatus status = (ex instanceof ErrorResponse erroSpring)
                 ? HttpStatus.valueOf(erroSpring.getStatusCode().value())
                 : HttpStatus.INTERNAL_SERVER_ERROR;

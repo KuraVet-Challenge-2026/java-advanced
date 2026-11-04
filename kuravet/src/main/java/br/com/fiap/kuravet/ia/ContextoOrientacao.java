@@ -5,12 +5,6 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 
-/**
- * Dados usados para escrever a orientacao ao tutor. A urgencia e a recomendacao
- * ja foram decididas pelo {@link MotorRegrasTriagem} e nao podem ser alteradas.
- *
- * @param anteriores ultimas triagens do mesmo pet, da mais recente para a mais antiga
- */
 public record ContextoOrientacao(String nomePet,
                                  String especie,
                                  int idadeAnos,

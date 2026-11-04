@@ -1,4 +1,4 @@
-# Cria o App Service Plan Linux (SKU B1) que hospeda o Web App.
+# Cria o App Service Plan
 
 foreach ($nome in @("RG", "LOCAL", "PLANO")) {
     if (-not (Get-Variable -Name $nome -ValueOnly -ErrorAction SilentlyContinue)) {

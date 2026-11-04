@@ -1,5 +1,4 @@
-# Remove o Resource Group inteiro (plano, Web App e tudo o que estiver nele).
-# A operacao e irreversivel, por isso exige digitar o nome do Resource Group.
+# Remove o Resource Group
 
 foreach ($nome in @("RG")) {
     if (-not (Get-Variable -Name $nome -ValueOnly -ErrorAction SilentlyContinue)) {

@@ -24,8 +24,7 @@ import java.util.Set;
 @Service
 public class ConsultaService {
 
-    // Maquina de estados completa; REALIZADA, RECUSADA e CANCELADA sao terminais.
-    // Quem pode disparar cada transicao (perfil) e decidido fora daqui, ex.: podeCancelar.
+    // Maquina de estados
     private static final Map<StatusConsulta, Set<StatusConsulta>> TRANSICOES_PERMITIDAS = Map.of(
             StatusConsulta.SOLICITADA, Set.of(StatusConsulta.AGENDADA, StatusConsulta.RECUSADA, StatusConsulta.CANCELADA),
             StatusConsulta.AGENDADA, Set.of(StatusConsulta.REALIZADA, StatusConsulta.CANCELADA)
@@ -138,7 +137,6 @@ public class ConsultaService {
         return consultaRepository.save(consulta);
     }
 
-    // VETERINARIO so cancela AGENDADA: uma solicitacao pendente deve ser recusada, nunca cancelada.
     public boolean podeCancelar(UsuarioPrincipal principal, Consulta consulta) {
         if (principal.isTutor()) {
             return ESTADOS_ATIVOS.contains(consulta.getStatus());

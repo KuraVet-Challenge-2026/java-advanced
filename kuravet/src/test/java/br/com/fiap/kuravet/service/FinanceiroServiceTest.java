@@ -48,7 +48,7 @@ class FinanceiroServiceTest {
         return new UncategorizedSQLException("call", "{call ...}", new SQLException(mensagem, "72000", codigo));
     }
 
-    // ---------- registrarPagamento ----------
+    // registrarPagamento
 
     @Test
     void registrarPagamentoDeveRetornarOIdGeradoPelaProcedure() {
@@ -76,7 +76,7 @@ class FinanceiroServiceTest {
         assertThatThrownBy(() -> service.registrarPagamento(form())).isSameAs(falha);
     }
 
-    // ---------- faturamento ----------
+    // Faturamento
 
     @Test
     void periodoInvertidoDeveSerRecusadoSemChamarOBanco() {

@@ -48,7 +48,7 @@ class PetServiceTest {
         petService = new PetService(petRepository, tutorRepository, consultaRepository);
     }
 
-    // ---------- helpers ----------
+    // Helpers
 
     private Tutor tutor(Long idTutor) {
         return Tutor.builder().idTutor(idTutor).nome("Tutor " + idTutor).cpf("111.111.111-1" + idTutor).build();
@@ -86,7 +86,7 @@ class PetServiceTest {
         when(petRepository.save(any(Pet.class))).thenAnswer(invocation -> invocation.getArgument(0));
     }
 
-    // ---------- normalizacao ----------
+    // Normalizacao
 
     @Test
     void deveNormalizarCodigoDeIdentificacaoParaMaiusculoSemEspacosNasPontas() {
@@ -109,7 +109,7 @@ class PetServiceTest {
         assertThat(resultado.getCodigoIdentificacao()).isNull();
     }
 
-    // ---------- duplicidade ----------
+    // Duplicidade
 
     @Test
     void deveLancarRegraDeNegocioAoCadastrarComCodigoDeIdentificacaoDuplicado() {

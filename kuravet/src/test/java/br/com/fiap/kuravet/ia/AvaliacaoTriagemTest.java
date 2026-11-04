@@ -18,11 +18,6 @@ import java.util.Objects;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * Avaliacao do caminho deterministico da triagem (palavras-chave + motor de regras) sobre
- * relatos realistas em src/test/resources/ia/casos-triagem.csv. Nao chama a LLM.
- * Os relatos sao ficticios, por isso podem aparecer no log.
- */
 class AvaliacaoTriagemTest {
 
     private static final Logger log = LoggerFactory.getLogger(AvaliacaoTriagemTest.class);

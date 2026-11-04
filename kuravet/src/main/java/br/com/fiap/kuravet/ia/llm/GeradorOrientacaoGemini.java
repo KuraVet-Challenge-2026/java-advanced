@@ -14,11 +14,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-/**
- * Escreve com o Google Gemini uma orientacao curta ao tutor, a partir da triagem ja decidida
- * e das triagens anteriores do pet. A LLM nao altera urgencia nem recomendacao.
- * Qualquer falha (inclusive resposta vazia ou longa demais) lanca {@link FalhaLlmException}.
- */
 @Component
 public class GeradorOrientacaoGemini implements GeradorOrientacao {
 

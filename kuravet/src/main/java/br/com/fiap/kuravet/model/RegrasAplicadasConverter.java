@@ -6,10 +6,7 @@ import jakarta.persistence.Converter;
 import java.util.List;
 import java.util.regex.Pattern;
 
-/**
- * Grava as regras aplicadas em uma unica coluna, separadas por " | ".
- * As descricoes das regras contem virgulas, por isso o separador nao e a virgula.
- */
+// Separador " | ": as descricoes das regras contem virgulas
 @Converter
 public class RegrasAplicadasConverter implements AttributeConverter<List<String>, String> {
 

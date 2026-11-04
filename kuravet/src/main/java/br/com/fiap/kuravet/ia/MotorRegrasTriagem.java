@@ -24,10 +24,6 @@ import static br.com.fiap.kuravet.ia.Sintoma.SANGRAMENTO;
 import static br.com.fiap.kuravet.ia.Sintoma.TOSSE;
 import static br.com.fiap.kuravet.ia.Sintoma.VOMITO;
 
-/**
- * Motor deterministico da triagem. E o unico lugar que decide a urgencia:
- * a LLM apenas extrai os sintomas do relato, nunca classifica o caso.
- */
 @Component
 public class MotorRegrasTriagem {
 

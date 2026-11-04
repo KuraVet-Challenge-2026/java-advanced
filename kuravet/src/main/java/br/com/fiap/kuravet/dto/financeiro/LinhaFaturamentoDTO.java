@@ -2,10 +2,6 @@ package br.com.fiap.kuravet.dto.financeiro;
 
 import java.math.BigDecimal;
 
-/**
- * Linha do cursor de PKG_KV_RELATORIO.PRC_FATURAMENTO_CLINICA_TIPO.
- * NIVEL vem de GROUPING_ID(CLINICA, TIPO_PAGAMENTO): 0 = detalhe, 1 = subtotal da clinica, 3 = total geral.
- */
 public record LinhaFaturamentoDTO(
         String clinica,
         String tipoPagamento,

@@ -9,10 +9,6 @@ import java.util.EnumSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-/**
- * Grava o conjunto de sintomas como texto separado por virgula ("VOMITO,DIARREIA").
- * Conjunto vazio vira NULL na coluna e NULL volta como conjunto vazio.
- */
 @Converter
 public class SintomasConverter implements AttributeConverter<Set<Sintoma>, String> {
 

@@ -56,7 +56,7 @@ class ExtratorPalavrasChaveTest {
                 arguments("Acho que ingeriu raticida", Set.of(INGESTAO_TOXICA), null),
                 arguments("Vomitando há 1 dia, piorou faz 3 dias e há uma semana já estava estranho", Set.of(VOMITO), 7),
                 arguments("Não come e não comeu chocolate", Set.of(FALTA_DE_APETITE), null),
-                // Formas coloquiais que apareceram na AvaliacaoTriagemTest.
+                // Formas coloquiais
                 arguments("A Luna tá sem comer há uns 4 dias", Set.of(FALTA_DE_APETITE), 4),
                 arguments("ele não tá comendo a ração", Set.of(FALTA_DE_APETITE), null),
                 arguments("meu gato não tá fazendo xixi", Set.of(NAO_URINA), null),

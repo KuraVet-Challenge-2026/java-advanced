@@ -7,10 +7,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-/**
- * Tenta escrever a orientacao com a LLM e, em qualquer falha, usa o modelo fixo.
- * O aviso final e acrescentado aqui, pelo codigo, e nunca pedido a LLM.
- */
 @Component
 public class GeradorOrientacaoComFallback {
 
@@ -37,7 +33,7 @@ public class GeradorOrientacaoComFallback {
             } catch (FalhaLlmException e) {
                 log.warn("Orientação com LLM falhou, usando modelo fixo: {}", e.getMessage());
             } catch (RuntimeException e) {
-                // So o tipo: a mensagem pode carregar trechos do relato ou da resposta.
+                // Nao logar a mensagem: pode conter trechos do relato
                 log.warn("Orientação com LLM falhou, usando modelo fixo: {}", e.getClass().getSimpleName());
             }
         }

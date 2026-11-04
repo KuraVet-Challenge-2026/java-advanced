@@ -16,11 +16,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Chamada das procedures financeiras dos packages PL/SQL (V9). Os parametros sao declarados
- * na mesma ordem da spec do package, sem ler metadados do banco. As procedures nao fazem
- * COMMIT: a transacao e controlada por quem chama (FinanceiroService).
- */
+// Parametros na mesma ordem da spec do package
 @Repository
 public class FinanceiroProcedureRepository {
 
@@ -67,7 +63,6 @@ public class FinanceiroProcedureRepository {
                         new SqlOutParameter(P_CURSOR, Types.REF_CURSOR, LINHA_FATURAMENTO));
     }
 
-    /** PKG_KV_CARGA.PRC_CARGA_PAGAMENTO; devolve o ID_PAGAMENTO gerado por SEQ_PAGAMENTO. */
     public long registrarPagamento(Long idConsulta, String clinica, String tipoPagamento,
                                    BigDecimal valor, LocalDate dataPagamento) {
         MapSqlParameterSource parametros = new MapSqlParameterSource()
@@ -81,7 +76,6 @@ public class FinanceiroProcedureRepository {
         return ((Number) saida.get(P_ID_PAGAMENTO)).longValue();
     }
 
-    /** PKG_KV_RELATORIO.PRC_FATURAMENTO_CLINICA_TIPO; linhas na ordem do cursor (detalhe, subtotal, total). */
     @SuppressWarnings("unchecked")
     public List<LinhaFaturamentoDTO> faturamento(LocalDate inicio, LocalDate fim) {
         MapSqlParameterSource parametros = new MapSqlParameterSource()

@@ -7,10 +7,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-/**
- * Tenta extrair os sintomas com a LLM e, em qualquer falha, usa o extrator de palavras-chave.
- * Informa o metodo que realmente produziu o resultado.
- */
 @Component
 public class ExtratorComFallback {
 
@@ -35,7 +31,7 @@ public class ExtratorComFallback {
             } catch (FalhaExtracaoLlmException e) {
                 log.warn("Extração com LLM falhou, usando palavras-chave: {}", e.getMessage());
             } catch (RuntimeException e) {
-                // So o tipo: a mensagem pode carregar trechos do relato ou da resposta.
+                // Nao logar a mensagem: pode conter trechos do relato
                 log.warn("Extração com LLM falhou, usando palavras-chave: {}", e.getClass().getSimpleName());
             }
         }

@@ -61,7 +61,6 @@ class TutorWebControllerTest {
     @MockitoBean
     private VeterinarioService veterinarioService;
 
-    // Dependencia do PortalWebController (painel); aqui so precisa existir.
     @MockitoBean
     private TriagemService triagemService;
 
@@ -174,7 +173,7 @@ class TutorWebControllerTest {
                 .andExpect(content().string(containsString("Transição de status inválida")));
     }
 
-    // ---------- solicitar teleconsulta ----------
+    // Solicitar teleconsulta
 
     private Pet petDoTutor() {
         return Pet.builder().idPet(1L).nome("Thor").especie("Cachorro")

@@ -1,9 +1,6 @@
 package br.com.fiap.kuravet.ia;
 
-/**
- * Niveis de urgencia da triagem, em ordem crescente de gravidade.
- * A ordem das constantes importa: {@link #maior(Urgencia)} usa o ordinal.
- */
+// A ordem das constantes importa: maior() usa o ordinal
 public enum Urgencia {
     BAIXA,
     MODERADA,

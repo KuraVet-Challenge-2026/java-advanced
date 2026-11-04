@@ -65,7 +65,6 @@ class TriagemServiceTest {
 
     @BeforeEach
     void setUp() {
-        // LLM desligada: extrator e orientacao caem direto nas palavras-chave e no modelo fixo, sem rede.
         GeminiProperties semLlm = new GeminiProperties(false, "", "http://localhost", "modelo", 1000, "");
         extratorSemLlm = new ExtratorComFallback(semLlm,
                 org.mockito.Mockito.mock(ExtratorGemini.class), new ExtratorPalavrasChave());
@@ -75,7 +74,7 @@ class TriagemServiceTest {
                 new MotorRegrasTriagem(), orientacaoSemLlm);
     }
 
-    // ---------- helpers ----------
+    // Helpers
 
     private UsuarioPrincipal principalTutor(Long idTutor) {
         Usuario usuario = Usuario.builder()
@@ -122,7 +121,7 @@ class TriagemServiceTest {
                 .build();
     }
 
-    // ---------- realizar ----------
+    // realizar
 
     @Test
     void devePersistirTriagemComUrgenciaDecididaPeloMotor() {
@@ -196,7 +195,7 @@ class TriagemServiceTest {
         verify(triagemRepository, never()).save(any());
     }
 
-    // ---------- orientacao personalizada ----------
+    // Orientacao personalizada
 
     @Test
     void devePersistirOrientacaoComAOrigemQueAProduziu() {
@@ -268,7 +267,7 @@ class TriagemServiceTest {
         assertThat(resultado.getOrigemOrientacao()).isNull();
     }
 
-    // ---------- listar ----------
+    // listar
 
     @Test
     void veterinarioDeveListarTodasAsTriagens() {
@@ -337,7 +336,7 @@ class TriagemServiceTest {
         assertThat(triagens).extracting(Triagem::getIdTriagem).containsExactly(4L, 3L);
     }
 
-    // ---------- listarPorPet ----------
+    // listarPorPet
 
     @Test
     void listarPorPetDeveOrdenarDaMaisRecenteParaAMaisAntiga() {
@@ -365,7 +364,7 @@ class TriagemServiceTest {
         verify(triagemRepository, never()).findByPetIdPet(any());
     }
 
-    // ---------- contarUrgentesDesde ----------
+    // contarUrgentesDesde
 
     @Test
     void contarUrgentesDesdeDeveSomarSomenteAltaEEmergencia() {
@@ -381,7 +380,7 @@ class TriagemServiceTest {
                 .countByUrgenciaAndDataTriagemGreaterThanEqual(eq(Urgencia.BAIXA), any());
     }
 
-    // ---------- buscarPorId ----------
+    // buscarPorId
 
     @Test
     void tutorNaoDeveVerTriagemDePetDeOutroTutor() {

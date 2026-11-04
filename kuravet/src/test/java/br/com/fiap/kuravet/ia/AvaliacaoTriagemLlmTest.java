@@ -32,18 +32,10 @@ import java.util.stream.Collectors;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
-/**
- * Avaliacao comparativa da urgencia com extracao por LLM e por palavras-chave, nos mesmos relatos,
- * com o mesmo motor de regras e o mesmo pet. Fora do CI: so roda com LLM_EVAL=true e LLM_API_KEY
- * definidas (sem elas o teste fica "skipped" e nao ha chamada de rede).
- * Chama o Gemini real apenas para a extracao (sem orientacao), nao grava no banco e gera
- * o relatorio em target/avaliacao-llm/. A chave nunca e impressa.
- */
 class AvaliacaoTriagemLlmTest {
 
     private static final Logger log = LoggerFactory.getLogger(AvaliacaoTriagemLlmTest.class);
 
-    /** Os 39 relatos de AvaliacaoTriagemTest, lidos do mesmo arquivo. */
     static final String ARQUIVO_AJUSTE = "/ia/casos-triagem.csv";
     static final String ARQUIVO_TESTE = "/avaliacao/relatos_teste.csv";
     static final String CONJUNTO_AJUSTE = "ajuste";
@@ -54,7 +46,6 @@ class AvaliacaoTriagemLlmTest {
     record Relato(String conjunto, String id, String texto, String especie, int idadeAnos, Urgencia esperada) {
     }
 
-    /** Resultado de um relato; {@code obtidaLlm} nulo = falha da LLM nesse relato. */
     record Linha(Relato relato, SintomasExtraidos sintomasPalavras, Urgencia obtidaPalavras,
                  SintomasExtraidos sintomasLlm, Urgencia obtidaLlm, long latenciaLlmMs, String statusLlm) {
 
@@ -63,7 +54,6 @@ class AvaliacaoTriagemLlmTest {
         }
     }
 
-    /** {@code interrompidoEm} preenchido = a avaliacao parou por cota (HTTP 429) nesse relato. */
     record Execucao(List<Linha> linhas, int totalRelatos, Relato interrompidoEm, String motivoInterrupcao) {
     }
 
@@ -73,7 +63,7 @@ class AvaliacaoTriagemLlmTest {
         String chave = System.getenv("LLM_API_KEY");
         assumeTrue(chave != null && !chave.isBlank(), "LLM_API_KEY ausente");
 
-        // Nao logar o record: o toString dele inclui a chave.
+        // Nao logar o record: o toString inclui a chave
         GeminiProperties propriedades = propriedadesDaAplicacao();
         long pausaMs = pausaMs();
 
@@ -97,7 +87,7 @@ class AvaliacaoTriagemLlmTest {
         assertThat(DESTINO.resolve("resultados.csv")).exists();
     }
 
-    // ---------- execucao ----------
+    // Execucao
 
     static Execucao executar(List<Relato> relatos, ExtratorSintomas extratorLlm, long pausaMs) {
         ExtratorPalavrasChave extratorPalavras = new ExtratorPalavrasChave();
@@ -121,7 +111,6 @@ class AvaliacaoTriagemLlmTest {
                 sintomasLlm = extratorLlm.extrair(relato.texto());
                 status = "OK";
             } catch (FalhaLlmException e) {
-                // A mensagem traz so o motivo (status HTTP, timeout), nunca a chave ou o relato.
                 if (e.getMessage() != null && e.getMessage().startsWith("HTTP 429")) {
                     return new Execucao(linhas, relatos.size(), relato, e.getMessage());
                 }
@@ -149,9 +138,8 @@ class AvaliacaoTriagemLlmTest {
         }
     }
 
-    // ---------- configuracao ----------
+    // Configuracao
 
-    /** Mesmas propriedades kuravet.ia.llm.* da aplicacao (application.properties + variaveis de ambiente). */
     static GeminiProperties propriedadesDaAplicacao() throws IOException {
         StandardEnvironment ambiente = new StandardEnvironment();
         ambiente.getPropertySources().addLast(new ResourcePropertySource("classpath:application.properties"));
@@ -170,15 +158,13 @@ class AvaliacaoTriagemLlmTest {
         }
     }
 
-    // ---------- leitura dos conjuntos ----------
+    // Leitura dos conjuntos
 
-    /** relato;especie;idade_anos;urgencia_esperada;observacao; o id e o numero da linha no arquivo. */
     static List<Relato> lerAjuste() throws IOException {
         return lerCsv(ARQUIVO_AJUSTE, 5, (numero, c) -> new Relato(CONJUNTO_AJUSTE, String.valueOf(numero),
                 c[0].trim(), c[1].trim(), Integer.parseInt(c[2].trim()), Urgencia.valueOf(c[3].trim())));
     }
 
-    /** id;relato;especie;idadeAnos;urgenciaEsperada;autor (o autor nao entra no relatorio). */
     static List<Relato> lerTeste() throws IOException {
         return lerCsv(ARQUIVO_TESTE, 6, (numero, c) -> new Relato(CONJUNTO_TESTE, c[0].trim(),
                 c[1].trim(), c[2].trim(), Integer.parseInt(c[3].trim()), Urgencia.valueOf(c[4].trim())));
@@ -212,7 +198,7 @@ class AvaliacaoTriagemLlmTest {
         return relatos;
     }
 
-    // ---------- relatorio ----------
+    // Relatorio
 
     static void gravarRelatorio(Execucao execucao, String configuracao, Path destino) throws IOException {
         Files.createDirectories(destino);
@@ -339,7 +325,6 @@ class AvaliacaoTriagemLlmTest {
         return total == 0 ? "-" : String.format(Locale.ROOT, "%.1f%%", 100.0 * parte / total);
     }
 
-    /** Percentil 95 pelo metodo nearest-rank, sobre a lista ja ordenada. */
     private static long p95(List<Long> ordenadas) {
         int posicao = (int) Math.ceil(0.95 * ordenadas.size()) - 1;
         return ordenadas.get(Math.max(posicao, 0));

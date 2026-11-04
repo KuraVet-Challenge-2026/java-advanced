@@ -32,7 +32,6 @@ public class TriagemService {
 
     private static final Logger log = LoggerFactory.getLogger(TriagemService.class);
 
-    // Mais urgentes primeiro (ordem do enum Urgencia) e, no mesmo nivel, as mais recentes.
     static final Comparator<Triagem> MAIS_URGENTES_PRIMEIRO = Comparator
             .comparing(Triagem::getUrgencia).reversed()
             .thenComparing(Triagem::getDataTriagem, Comparator.reverseOrder());
@@ -80,15 +79,13 @@ public class TriagemService {
 
         Triagem salva = triagemRepository.save(triagem);
 
-        // O relato e dado do tutor e nao vai para o log.
+        // Nao logar o relato
         log.info("Triagem registrada: idPet={}, urgencia={}, metodo={}, orientacao={}",
                 pet.getIdPet(), salva.getUrgencia(), salva.getMetodoExtracao(), salva.getOrigemOrientacao());
 
         return salva;
     }
 
-    // Roda depois do motor e so recebe o resultado pronto: nao altera urgencia nem recomendacao.
-    // Qualquer falha aqui deixa a triagem sem orientacao, mas nunca impede que ela seja salva.
     private OrientacaoGerada gerarOrientacao(Pet pet, PerfilPet perfil, String relato,
                                              SintomasExtraidos sintomas, ResultadoTriagem resultado) {
         try {
@@ -121,14 +118,12 @@ public class TriagemService {
                 .toList();
     }
 
-    // ALTA e EMERGENCIA: as que pedem teleconsulta prioritaria ou atendimento imediato.
     public List<Triagem> listarUrgentes(UsuarioPrincipal principal) {
         return listar(principal).stream()
                 .filter(triagem -> triagem.getUrgencia().sugereTeleconsultaPrioritaria())
                 .toList();
     }
 
-    // O ownership vem do PetService: pet de outro tutor responde como inexistente.
     public List<Triagem> listarPorPet(UsuarioPrincipal principal, Long idPet) {
         Pet pet = petService.buscarPorId(principal, idPet);
 
@@ -137,7 +132,6 @@ public class TriagemService {
                 .toList();
     }
 
-    // Soma apenas ALTA e EMERGENCIA; MODERADA e BAIXA nao entram na conta.
     public long contarUrgentesDesde(LocalDateTime desde) {
         return triagemRepository.countByUrgenciaAndDataTriagemGreaterThanEqual(Urgencia.ALTA, desde)
                 + triagemRepository.countByUrgenciaAndDataTriagemGreaterThanEqual(Urgencia.EMERGENCIA, desde);

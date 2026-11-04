@@ -10,7 +10,6 @@ import org.springframework.format.annotation.DateTimeFormat;
 
 import java.time.LocalDate;
 
-// Mesmas validacoes do ConsultaRequestDTO, com mensagens voltadas para quem preenche a tela.
 @Data
 public class SolicitacaoConsultaForm {
 

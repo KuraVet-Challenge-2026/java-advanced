@@ -41,7 +41,6 @@ public class PortalWebController {
         return "login";
     }
 
-    // Quem nao esta logado e levado ao /login pela seguranca antes de chegar aqui.
     @GetMapping("/")
     public String inicio(@AuthenticationPrincipal UsuarioPrincipal principal) {
         return "redirect:" + RedirecionamentoPorPerfilHandler.destino(principal.getPerfil());

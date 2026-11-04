@@ -1,4 +1,4 @@
-# Cria o Resource Group que agrupa todos os recursos do KuraVet.
+# Cria o Resource Group
 
 foreach ($nome in @("RG", "LOCAL")) {
     if (-not (Get-Variable -Name $nome -ValueOnly -ErrorAction SilentlyContinue)) {

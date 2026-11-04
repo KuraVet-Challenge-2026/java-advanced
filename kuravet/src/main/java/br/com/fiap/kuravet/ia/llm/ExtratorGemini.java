@@ -18,11 +18,6 @@ import java.util.EnumSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-/**
- * Extrai sintomas do relato usando o Google Gemini. A LLM so le o relato e devolve
- * sintomas do enum {@link Sintoma}; a urgencia e decidida pelo motor de regras.
- * Qualquer falha lanca {@link FalhaExtracaoLlmException} para o chamador cair no fallback.
- */
 @Component
 public class ExtratorGemini implements ExtratorSintomas {
 
@@ -113,7 +108,7 @@ public class ExtratorGemini implements ExtratorSintomas {
             try {
                 encontrados.add(Sintoma.valueOf(item.asString()));
             } catch (IllegalArgumentException ignorado) {
-                // Sintoma fora do enum: descartado.
+                // Sintoma fora do enum: descartado
             }
         }
 

@@ -2,12 +2,6 @@ package br.com.fiap.kuravet.ia;
 
 import java.util.Set;
 
-/**
- * Sintomas estruturados extraidos do relato do tutor.
- *
- * @param sintomas     conjunto imutavel de sintomas (null vira conjunto vazio)
- * @param duracaoDias  ha quantos dias os sintomas aparecem; null quando nao informado
- */
 public record SintomasExtraidos(Set<Sintoma> sintomas, Integer duracaoDias) {
 
     public SintomasExtraidos {

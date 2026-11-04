@@ -5,10 +5,6 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 import java.util.Locale;
 
-/**
- * Orientacao montada por modelo fixo, sem IA: uma frase com os sintomas e outra com a acao
- * esperada para a urgencia. Deterministica; usada quando a LLM esta desligada ou falha.
- */
 @Component
 public class GeradorOrientacaoModeloFixo implements GeradorOrientacao {
 
@@ -45,7 +41,6 @@ public class GeradorOrientacaoModeloFixo implements GeradorOrientacao {
         };
     }
 
-    // "a", "a e b", "a, b e c"
     private static String juntar(List<String> itens) {
         if (itens.size() == 1) {
             return itens.get(0);

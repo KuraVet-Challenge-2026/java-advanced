@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
 
-// Somente visualizacao: a triagem e criada pela API (app do tutor) e a LLM nunca e chamada aqui.
 @Controller
 public class TriagemWebController {
 

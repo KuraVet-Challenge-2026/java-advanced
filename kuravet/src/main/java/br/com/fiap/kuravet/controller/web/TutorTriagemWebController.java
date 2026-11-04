@@ -15,7 +15,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-// Triagem por IA na area do tutor (/tutor/** exige TUTOR). Regras ficam no TriagemService.
 @Controller
 public class TutorTriagemWebController {
 
@@ -44,7 +43,6 @@ public class TutorTriagemWebController {
         return "tutor-triagem-nova";
     }
 
-    // Redireciona para o resultado (POST/redirect/GET): atualizar a pagina nao refaz a triagem nem chama a LLM de novo.
     @PostMapping("/tutor/triagens")
     public String realizar(@AuthenticationPrincipal UsuarioPrincipal principal,
                            @ModelAttribute("triagemForm") @Valid TriagemForm form,

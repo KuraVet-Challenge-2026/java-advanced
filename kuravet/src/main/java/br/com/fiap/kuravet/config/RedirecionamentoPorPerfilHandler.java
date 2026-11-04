@@ -11,10 +11,6 @@ import org.springframework.security.web.authentication.AuthenticationSuccessHand
 
 import java.io.IOException;
 
-/**
- * Depois do login, cada perfil cai na sua propria area do portal:
- * VETERINARIO no painel da clinica e TUTOR na lista das proprias consultas.
- */
 public class RedirecionamentoPorPerfilHandler implements AuthenticationSuccessHandler {
 
     private final RedirectStrategy redirectStrategy = new DefaultRedirectStrategy();

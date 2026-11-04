@@ -6,7 +6,6 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
-// Mesmas validacoes do TriagemRequestDTO, com mensagens voltadas para quem preenche a tela.
 @Data
 public class TriagemForm {
 

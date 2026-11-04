@@ -38,7 +38,6 @@ class ExtratorGeminiTest {
         extrator = new ExtratorGemini(propriedades, builder.build());
     }
 
-    /** Monta a resposta do Gemini, com o JSON extraido dentro de candidates[0].content.parts[0].text. */
     private static String respostaGemini(String jsonExtraido) {
         String textoEscapado = jsonExtraido.replace("\\", "\\\\").replace("\"", "\\\"");
         return "{\"candidates\":[{\"content\":{\"parts\":[{\"text\":\"" + textoEscapado + "\"}]},"

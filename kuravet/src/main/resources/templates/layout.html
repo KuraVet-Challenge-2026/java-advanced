@@ -13,7 +13,6 @@
 
 <header class="topo" th:fragment="topo(pagina)">
     <div class="topo-interno">
-        <!-- "/" redireciona para a area do perfil logado. -->
         <a class="marca" th:href="@{/}">KuraVet</a>
         <nav class="menu">
             <th:block sec:authorize="hasRole('VETERINARIO')">
@@ -43,14 +42,14 @@
     <p class="aviso aviso-sucesso" th:if="${sucesso}" th:text="${sucesso}"></p>
 </div>
 
-<!-- Paginas de erro: o menu so aparece para quem tem acesso ao portal. -->
+<!-- Menu das paginas de erro -->
 <th:block th:fragment="topo-erro">
     <th:block sec:authorize="isAuthenticated()">
         <header th:replace="~{layout :: topo('')}"></header>
     </th:block>
 </th:block>
 
-<!-- Link de retorno para a area do perfil de quem esta vendo a pagina de erro. -->
+<!-- Link de retorno das paginas de erro -->
 <div th:fragment="voltar-perfil" class="acoes">
     <a sec:authorize="hasRole('VETERINARIO')" class="botao botao-principal"
        th:href="@{/portal/painel}">Voltar ao painel</a>

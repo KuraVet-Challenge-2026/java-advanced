@@ -12,12 +12,10 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-// Valida so o formato dos campos (limites das colunas de FATO_PAGAMENTO). As regras de negocio
-// (consulta REALIZADA, valor > 0, tipo valido, clinica obrigatoria) ficam em PKG_KV_CARGA.PRC_CARGA_PAGAMENTO.
 @Data
 public class PagamentoForm {
 
-    // Mesmos valores do KV_CK_PAG_TIPO (V8); o rotulo e so para exibicao.
+    // Mesmos valores do KV_CK_PAG_TIPO (V8)
     public static final Map<String, String> TIPOS_PAGAMENTO;
 
     static {
@@ -40,7 +38,6 @@ public class PagamentoForm {
     @Digits(integer = 8, fraction = 2, message = "Informe o valor com até 8 dígitos e 2 casas decimais.")
     private BigDecimal valor;
 
-    // Vazio = data de hoje (NVL(p_data_pagamento, SYSDATE) na procedure).
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     private LocalDate dataPagamento = LocalDate.now();
 }

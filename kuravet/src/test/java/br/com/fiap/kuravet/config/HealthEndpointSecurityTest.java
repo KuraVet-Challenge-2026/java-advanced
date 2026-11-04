@@ -13,11 +13,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/**
- * Valida so as regras do SecurityConfig para o actuator, sem Oracle e sem contexto completo.
- * Os endpoints reais do actuator nao existem em @WebMvcTest; controllers falsos nos mesmos
- * caminhos bastam para exercitar a cadeia de seguranca.
- */
 @WebMvcTest(HealthEndpointSecurityTest.EndpointsFalsos.class)
 @Import({SecurityConfig.class, HealthEndpointSecurityTest.EndpointsFalsos.class})
 class HealthEndpointSecurityTest {

@@ -1,4 +1,4 @@
-# Cria o Web App com runtime Java 21 e restringe o acesso a HTTPS.
+# Cria o Web App
 
 foreach ($nome in @("RG", "PLANO", "WEBAPP")) {
     if (-not (Get-Variable -Name $nome -ValueOnly -ErrorAction SilentlyContinue)) {

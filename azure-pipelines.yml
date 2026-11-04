@@ -1,5 +1,4 @@
-# Pipeline CI do backend KuraVet (Spring Boot / Java 21).
-# O projeto Maven fica em kuravet/; este arquivo fica na raiz do repositorio.
+# Pipeline do backend KuraVet
 
 trigger:
   branches:
@@ -17,8 +16,7 @@ pool:
 variables:
   MAVEN_CACHE_FOLDER: $(Pipeline.Workspace)/.m2/repository
   MAVEN_OPTS: '-Dmaven.repo.local=$(MAVEN_CACHE_FOLDER)'
-  # Valores nao sensiveis do CD. A service connection precisa ser conhecida em
-  # tempo de compilacao, por isso fica aqui e nao no variable group.
+  # Service connection resolvida em tempo de compilacao: nao mover para o variable group
   azureSubscription: 'sc-kuravet-azure'
   resourceGroup: 'rg-kuravet-rm562396'
   webAppName: 'kuravet-rm562396'
@@ -84,7 +82,6 @@ stages:
     dependsOn: CI
     condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'), ne(variables['Build.Reason'], 'PullRequest'))
     variables:
-      # Segredos (DB_URL, DB_USERNAME, DB_PASSWORD) so existem neste stage.
       - group: kuravet-producao
     jobs:
       - deployment: DeployWebApp
@@ -110,10 +107,6 @@ stages:
                     azureSubscription: ${{ variables.azureSubscription }}
                     appName: $(webAppName)
                     resourceGroupName: $(resourceGroup)
-                    # O App Service Linux encaminha as requisicoes para a porta 80;
-                    # SERVER_PORT faz o Spring Boot escutar nela.
-                    # WEBSITES_CONTAINER_START_TIME_LIMIT (s) sobe o limite padrao
-                    # de 230 s: no B1 o start com Flyway fica perto dele.
                     appSettings: |
                       [
                         { "name": "DB_URL", "value": "$(DB_URL)", "slotSetting": false },
@@ -124,11 +117,8 @@ stages:
                         { "name": "WEBSITES_CONTAINER_START_TIME_LIMIT", "value": "900", "slotSetting": false }
                       ]
 
-                # OneDeploy (--type jar) em vez de ZIP Deploy: o rsync do Kudu
-                # travava no AzureWebApp@1. --track-status false nao acompanha o
-                # start do site (que estourava os 10 min do az); a confirmacao
-                # fica no health check abaixo.
-                # O startup file e configuracao fixa do Web App (infra/04).
+                # OneDeploy em vez de ZIP Deploy: o rsync do Kudu travava no AzureWebApp@1
+                # --track-status false: o start estourava os 10 min do az
                 - task: AzureCLI@2
                   displayName: "Publicar app.jar no Web App (OneDeploy)"
                   inputs:
@@ -139,8 +129,6 @@ stages:
                       set -euo pipefail
                       az webapp deploy --resource-group "$(resourceGroup)" --name "$(webAppName)" --src-path "$(Pipeline.Workspace)/kuravet-jar/app.jar" --type jar --restart true --track-status false
 
-                # Espera 120 s para o reinicio comecar (evita validar a versao
-                # antiga) e tenta por ate ~15 min. O corpo nao e impresso.
                 - bash: |
                     set -uo pipefail
                     corpo="$(mktemp)"

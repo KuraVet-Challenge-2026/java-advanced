@@ -14,14 +14,13 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.OptionalInt;
 
-// As regras de pagamento vivem no PL/SQL; aqui so se abre a transacao (as procedures nao fazem COMMIT)
-// e se traduzem os erros ORA-200xx.
+// As procedures nao fazem COMMIT: a transacao e aberta aqui
 @Service
 public class FinanceiroService {
 
     private static final Logger log = LoggerFactory.getLogger(FinanceiroService.class);
 
-    // PKG_KV_UTIL.c_err_sem_dados: o relatorio sem pagamentos no periodo e um estado vazio, nao um erro.
+    // PKG_KV_UTIL.c_err_sem_dados
     static final int CODIGO_SEM_DADOS = 20013;
 
     private final FinanceiroProcedureRepository repository;

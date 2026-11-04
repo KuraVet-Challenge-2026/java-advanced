@@ -73,7 +73,7 @@ public class Triagem {
     @Column(name = "DATA_TRIAGEM", nullable = false)
     private LocalDateTime dataTriagem;
 
-    // Nulos nas triagens anteriores a V10.
+    // Nulos nas triagens anteriores a V10
     @Column(name = "ORIENTACAO", length = 1000)
     private String orientacao;
 

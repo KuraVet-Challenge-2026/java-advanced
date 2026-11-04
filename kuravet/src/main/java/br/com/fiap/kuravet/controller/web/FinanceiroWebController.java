@@ -22,8 +22,6 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import java.time.LocalDate;
 import java.util.List;
 
-// Tela Financeiro do portal (/portal/** exige VETERINARIO). Pagamento e faturamento passam pelos
-// packages PL/SQL; erros ORA-200xx chegam aqui como RegraDeNegocioException e viram mensagem na tela.
 @Controller
 public class FinanceiroWebController {
 
@@ -60,7 +58,6 @@ public class FinanceiroWebController {
                 redirect.addFlashAttribute("sucesso", "Pagamento nº " + idPagamento + " registrado.");
                 return "redirect:/portal/financeiro";
             } catch (RegraDeNegocioException e) {
-                // Ex.: consulta nao realizada ou valor invalido (regra do PL/SQL). Volta ao formulario.
                 resultado.reject("regraDeNegocio", e.getMessage());
             }
         }
@@ -69,7 +66,6 @@ public class FinanceiroWebController {
         return "financeiro";
     }
 
-    // Periodo padrao: ano corrente. Erro no filtro aparece junto da tabela, sem pagina de erro.
     private void carregarTela(UsuarioPrincipal principal, LocalDate inicio, LocalDate fim, Model model) {
         LocalDate hoje = LocalDate.now();
         LocalDate inicioFiltro = inicio != null ? inicio : hoje.withDayOfYear(1);

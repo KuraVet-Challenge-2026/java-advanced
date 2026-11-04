@@ -59,7 +59,7 @@ class ConsultaServiceTest {
         consultaService = new ConsultaService(consultaRepository, petRepository, veterinarioRepository);
     }
 
-    // ---------- helpers ----------
+    // Helpers
 
     private UsuarioPrincipal principalTutor(Long idTutor) {
         Usuario usuario = Usuario.builder()
@@ -128,7 +128,7 @@ class ConsultaServiceTest {
         }
     }
 
-    // ---------- 1. solicitarTeleconsulta ----------
+    // solicitarTeleconsulta
 
     @Test
     void deveSolicitarTeleconsultaComStatusSolicitadaEDataDeHoje() {
@@ -205,7 +205,7 @@ class ConsultaServiceTest {
         verify(consultaRepository, never()).save(any());
     }
 
-    // ---------- 4, 5, 6, 7. transicoes validas ----------
+    // Transicoes validas
 
     @Test
     void deveAprovarSolicitacaoTransicionandoDeSolicitadaParaAgendada() {
@@ -248,7 +248,7 @@ class ConsultaServiceTest {
         verify(consultaRepository).save(consulta);
     }
 
-    // ---------- cancelamento: regra depende do perfil (TUTOR x VETERINARIO) ----------
+    // Cancelamento
 
     @Test
     void deveCancelarSolicitacaoDoProprioTutor() {
@@ -361,7 +361,7 @@ class ConsultaServiceTest {
         assertThat(consultaService.podeCancelar(veterinario, realizada)).isFalse();
     }
 
-    // ---------- excluir ----------
+    // Excluir
 
     @Test
     void deveLancarRegraDeNegocioAoExcluirConsultaRealizada() {
@@ -375,7 +375,7 @@ class ConsultaServiceTest {
         verify(consultaRepository, never()).delete(any());
     }
 
-    // ---------- 8. transicoes invalidas ----------
+    // Transicoes invalidas
 
     @ParameterizedTest(name = "deveRecusarTransicaoDeEstadoInvalida: {0} -> {1}")
     @CsvSource({
@@ -394,7 +394,7 @@ class ConsultaServiceTest {
         verify(consultaRepository, never()).save(any());
     }
 
-    // ---------- 9, 10. buscarPorId e ownership ----------
+    // buscarPorId e ownership
 
     @Test
     void deveLancarConsultaNaoEncontradaAoBuscarConsultaDeOutroTutor() {
